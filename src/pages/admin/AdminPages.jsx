@@ -2816,8 +2816,8 @@ function ClassAttendanceStatus({ status, unavailable, noStudents, canEdit, canVi
     </>
   );
 }
-
-function AttendanceOverviewPage({ focus, clearFocus }) {
+// here new the openstudent
+function AttendanceOverviewPage({ focus, clearFocus, openStudent }) {
   const data = useData();
   const auth = useAuth();
   const { db } = data;
@@ -2891,13 +2891,13 @@ function AttendanceOverviewPage({ focus, clearFocus }) {
           })}
         </div>
       )}
-
       <ClassMonthlyRegisterModal
         classId={registerFor}
         monthKey={registerMonth}
         onMonthChange={setRegisterMonth}
         onClose={() => setRegisterFor(null)}
         onOpenDay={(day, mode) => setEditor({ classId: registerFor, dateKey: day, mode })}
+        openStudent={openStudent}
         canManage={(() => { const c = db.classes.find((x) => x.id === registerFor); return c ? data.canTakeClassAttendance(c, auth.currentUser) : false; })()}
       />
       <AttendanceEditorModal classId={editor?.classId} dateKey={editor?.dateKey} mode={editor?.mode} onClose={() => setEditor(null)} />
@@ -2910,7 +2910,8 @@ function AttendanceOverviewPage({ focus, clearFocus }) {
 // Owner/Educational Director overview (AttendanceOverviewPage) and by head/subject teachers
 // (TeacherAttendancePage) so the editor only needs to exist once. Saving closes the modal —
 // the caller's list re-renders from the same `db` state, no extra plumbing needed.
-function AttendanceEditorModal({ classId, dateKey, mode, onClose }) {
+
+function AttendanceEditorModal({ classId, dateKey, mode, onClose, openStudent }) {
   const data = useData();
   const auth = useAuth();
   const toast = useToast();
@@ -2983,8 +2984,10 @@ function AttendanceEditorModal({ classId, dateKey, mode, onClose }) {
               <div className="divide-y divide-slate-100 border-t border-slate-100 sm:max-h-[55vh] sm:overflow-y-auto">
                 {students.map((s, i) => (
                   <AttendanceStudentRow key={s.id} index={i + 1} name={data.studentFullName(s)} photo={s.photo}
-                    status={draft[s.id]?.status} onChange={(st) => setStatus(s.id, st)} readOnly={readOnly}
-                    fallbackLabel={noSchoolDay ? classification.label : "Not marked"} />
+                  status={draft[s.id]?.status} onChange={(st) => setStatus(s.id, st)} readOnly={readOnly}
+                  openStudent={openStudent}
+                  studentId={s.id}
+                  fallbackLabel={noSchoolDay ? classification.label : "Not marked"} />
                 ))}
               </div>
               {!readOnly && <AttendanceSaveBar marked={markedCount} total={students.length} dirty={dirty} busy={busy} onCancel={requestClose} onSave={save} />}
@@ -3008,7 +3011,7 @@ const ATTENDANCE_CODE_TEXT_TONE = { green: "text-emerald-600", amber: "text-ambe
 // Owner/Educational Director overview and by TeacherAttendancePage so the register only exists
 // once. Clicking a day column opens the existing AttendanceEditorModal for that exact date via
 // `onOpenDay` — this component never creates or edits records itself.
-function ClassMonthlyRegisterModal({ classId, monthKey, onMonthChange, onClose, onOpenDay, canManage, blockedForDate }) {
+function ClassMonthlyRegisterModal({ classId, monthKey, onMonthChange, onClose, onOpenDay, canManage, blockedForDate, openStudent }) {
   const data = useData();
   const { db } = data;
   const cls = db.classes.find((c) => c.id === classId) || null;
@@ -3079,7 +3082,19 @@ function ClassMonthlyRegisterModal({ classId, monthKey, onMonthChange, onClose, 
                     return (
                       <tr key={s.id} className="hover:bg-slate-50/60">
                         <td className="sticky left-0 bg-white px-1.5 py-1.5 text-slate-400">{i + 1}</td>
-                        <td className="sticky left-6 bg-white px-2 py-1.5 text-slate-700 font-medium min-w-[7.5rem] max-w-[9.5rem] leading-tight">{data.studentFullName(s)}</td>
+                       <td className="sticky left-6 bg-white px-2 py-1.5 text-slate-700 font-medium min-w-[7.5rem] max-w-[9.5rem] leading-tight">
+  {openStudent ? (
+    <button
+      type="button"
+      onClick={() => openStudent(s.id)}
+      className="text-left hover:text-brand-600 hover:underline"
+    >
+      {data.studentFullName(s)}
+    </button>
+  ) : (
+    data.studentFullName(s)
+  )}
+</td>
                         {days.map((d, di) => {
                           const rec = cells[di];
                           const code = rec ? ATTENDANCE_STATUS_CODE[rec.status] : "—";

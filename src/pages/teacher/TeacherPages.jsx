@@ -677,7 +677,7 @@ function CreateHomeworkModal({ open, onClose, classes, presetClassId, presetSubj
 // card). Classes taught as a subject teacher still show up elsewhere (My Classes, homework, etc.)
 // via data.teacherClassIds — just not on this page. Reuses AttendanceEditorModal and
 // ClassMonthlyRegisterModal from AdminPages.jsx so the take/view/register UI only exists once.
-function TeacherAttendancePage() {
+function TeacherAttendancePage({ openStudent }) {
   const data = useData();
   const auth = useAuth();
   const { db } = data;
@@ -747,8 +747,15 @@ function TeacherAttendancePage() {
         onOpenDay={(day, mode) => setEditor({ classId: registerFor, dateKey: day, mode })}
         canManage
         blockedForDate={(day) => !data.canTeacherPerformAcademicAction(auth.currentUser, day)}
+        openStudent={openStudent}
       />
-      <AttendanceEditorModal classId={editor?.classId} dateKey={editor?.dateKey} mode={editor?.mode} onClose={() => setEditor(null)} />
+      <AttendanceEditorModal
+      classId={editor?.classId}
+      dateKey={editor?.dateKey}
+      mode={editor?.mode}
+      onClose={() => setEditor(null)}
+      openStudent={openStudent}
+      />
     </div>
   );
 }

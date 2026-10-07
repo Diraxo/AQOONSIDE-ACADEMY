@@ -92,13 +92,26 @@ function AttendanceStatusPicker({ value, onChange, statuses = ATTENDANCE_STATUSE
 // number, avatar and name with the current status in words on the right, then the segmented status
 // control underneath. From `sm` up it sits side by side. Names wrap instead of truncating so a long
 // name is never clipped. `readOnly` shows the status as a badge.
-function AttendanceStudentRow({ index, name, photo, status, onChange, readOnly, fallbackLabel = "Not marked" }) {
+
+function AttendanceStudentRow({ index, name, photo, status, onChange, readOnly, fallbackLabel = "Not marked", onOpenStudent }) {
   return (
     <div className={readOnly ? "flex items-center justify-between gap-3 py-2.5 sm:py-3" : "flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-2.5 py-2.5 sm:py-3"}>
       <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
         <span className="text-xs text-slate-400 w-5 shrink-0">{index}.</span>
         <Avatar name={name} photo={photo} size={28} />
-        <p className="text-sm font-medium text-slate-700 break-words min-w-0 flex-1">{name}</p>
+        {readOnly && onOpenStudent ? (
+  <button
+    type="button"
+    onClick={() => onOpenStudent()}
+    className="text-sm font-medium text-slate-700 break-words min-w-0 flex-1 text-left hover:text-brand-600 hover:underline"
+  >
+    {name}
+  </button>
+) : (
+  <p className="text-sm font-medium text-slate-700 break-words min-w-0 flex-1">
+    {name}
+  </p>
+)}
         {!readOnly && <span className={`shrink-0 text-[11px] font-medium sm:hidden ${status ? "text-slate-500" : "text-amber-600"}`}>{status || "Not marked"}</span>}
       </div>
       {readOnly ? <span className="shrink-0"><Badge tone={statusTone(status)}>{status || fallbackLabel}</Badge></span> : <AttendanceStatusPicker value={status} onChange={onChange} />}

@@ -459,7 +459,14 @@ function PageRouter({ role, page, setPage }) {
       case "teachers": return <TeachersPage onMessage={goToMessages} />;
       case "classes": return <ClassesPage />;
       case "timetable": return <AdminTimetablePage />;
-      case "attendance": return <AttendanceOverviewPage focus={activityFocus} clearFocus={clearActivityFocus} />;
+      case "attendance":
+  return (
+    <AttendanceOverviewPage
+      focus={activityFocus}
+      clearFocus={clearActivityFocus}
+      openStudent={setStudentDetailId}
+    />
+  );
       case "staffAttendance": return <StaffAttendancePage />;
       case "leaveRequests": return <LeaveApprovalsPage />;
       case "homework": return <HomeworkAdminPage focus={activityFocus} clearFocus={clearActivityFocus} />;
@@ -506,7 +513,14 @@ function PageRouter({ role, page, setPage }) {
       case "teachers": return <TeachersPage onMessage={goToMessages} />;
       case "classes": return <ClassesPage />;
       case "timetable": return <AdminTimetablePage />;
-      case "attendance": return <AttendanceOverviewPage focus={activityFocus} clearFocus={clearActivityFocus} />;
+     case "attendance":
+  return (
+    <AttendanceOverviewPage
+      focus={activityFocus}
+      clearFocus={clearActivityFocus}
+      openStudent={(studentId) => setStudentDetailId(studentId)}
+    />
+  );
       case "staffAttendance": return <StaffAttendancePage />;
       case "leaveRequests": return <LeaveApprovalsPage />;
       case "homework": return <HomeworkAdminPage focus={activityFocus} clearFocus={clearActivityFocus} />;
@@ -527,7 +541,12 @@ function PageRouter({ role, page, setPage }) {
       case "classes": return <TeacherClassesPage onOpen={setStudentDetailId} onMessage={goToMessages} />;
       case "timetable": return <TeacherTimetablePage />;
       case "homework": return <TeacherHomeworkPage />;
-      case "attendance": return <TeacherAttendancePage />;
+      case "attendance":
+      return (
+        <TeacherAttendancePage
+          openStudent={(studentId) => setStudentDetailId(studentId)}
+        />
+      );
       case "leaveRequests": return <StaffLeaveRequestPage />;
       case "exams": return <ResultsPage role={role} focus={activityFocus} clearFocus={clearActivityFocus} />;
       case "announcements": return <AnnouncementsPage role={role} />;
