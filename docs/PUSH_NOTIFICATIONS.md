@@ -62,20 +62,19 @@ Done on 2026-09-27 via the CLI: migration applied (and recorded in history), sec
 ## Deploy runbook
 
 The Supabase CLI on the coding machine is signed in to a different account and cannot see project
-`qdasxuwewtbzjbhiulja`, so these need to be run by you.
+`<your-supabase-project-ref>`, so these need to be run by you.
 
 1. **Migration.** `supabase db push` also applies the other *untracked* migrations in this folder
    (`20260920030000`, `20260920050000`, `20260920055000`). Review those first; if you only want push, apply
-   `20260927000000_push_devices_actor_delivery.sql` on its own in the SQL editor. It supersedes the unapplied
-   `hiil-mobile/backend/migrations/20260920060000_mobile_device_tokens.sql` — apply one, not both.
+   `20260927000000_push_devices_actor_delivery.sql` on its own in the SQL editor. It supersedes an earlier unapplied draft mobile-device-tokens migration (not part of this repository); apply one, not both.
 2. **Secrets** (the JSON never enters Git; the file is git-ignored):
    ```powershell
-   supabase secrets set --project-ref qdasxuwewtbzjbhiulja FCM_SERVICE_ACCOUNT="$(Get-Content -Raw .\hiil-model-school-firebase-adminsdk-fbsvc-be5eb736db.json)"
-   supabase secrets set --project-ref qdasxuwewtbzjbhiulja PUSH_WEBHOOK_SECRET="<32+ random chars, e.g. from `openssl rand -hex 32`>"
+   supabase secrets set --project-ref <your-supabase-project-ref> FCM_SERVICE_ACCOUNT="$(Get-Content -Raw .\<your-firebase-adminsdk>.json)"
+   supabase secrets set --project-ref <your-supabase-project-ref> PUSH_WEBHOOK_SECRET="<32+ random chars, e.g. from `openssl rand -hex 32`>"
    ```
    Afterwards move the JSON out of the project folder (or delete it) and consider rotating the key
    (Firebase console → Project settings → Service accounts) since it sat in a synced OneDrive folder.
-3. **Deploy the function:** `supabase functions deploy push-fanout --project-ref qdasxuwewtbzjbhiulja`
+3. **Deploy the function:** `supabase functions deploy push-fanout --project-ref <your-supabase-project-ref>`
    (add `--no-verify-jwt` if the project uses the new `sb_secret_*` keys; the secret header is then the gate).
 4. **Webhook.** Dashboard → Database → Webhooks → *Create*: table `public.notifications`, event **Insert**,
    type *Supabase Edge Function* → `push-fanout`, HTTP headers `x-webhook-secret: <the same secret>`.
@@ -92,7 +91,7 @@ The Supabase CLI on the coding machine is signed in to a different account and c
 Android (Chrome, installed PWA) and iPhone (Safari → Add to Home Screen → open from the icon), each:
 1. Sign in → tap **Enable Notifications** → Allow.
 2. Foreground: from another account publish an announcement → in-app toast, badge, no OS banner (iPhone still shows one).
-3. Background / minimised: same → OS notification "Hiil Model School / <Name>: <headline>".
+3. Background / minimised: same → OS notification "AQOONSIDE SCHOOL / <Name>: <headline>".
 4. Closed (swipe the app away): same → notification appears.
 5. Tap it → the app opens on Notifications and shows the announcement.
 6. Firebase console → Messaging → *Send test message* with the device's FCM token (copy it from the

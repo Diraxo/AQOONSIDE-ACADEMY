@@ -1,3 +1,4 @@
+import { SCHOOL_NAME } from "../config/branding";
 import React from "react";
 import { BellRing, BellOff, Info } from "lucide-react";
 import { Card, PrimaryButton, GhostButton } from "./ui";
@@ -51,7 +52,7 @@ export function PushStatusCard() {
 
   if (push.status === "enabled") {
     title = "Push notifications are on for this device";
-    detail = "You'll be alerted even when Hiil Model School is closed.";
+    detail = `You'll be alerted even when ${SCHOOL_NAME} is closed.`;
     action = <GhostButton onClick={push.disable} loading={push.busy}>Turn off</GhostButton>;
   } else if (push.status === "registration-error") {
     // Browser permission is Allowed -- this is NOT "blocked" and must never be shown as such (Phase 3/22).
@@ -61,7 +62,7 @@ export function PushStatusCard() {
   } else if (push.status === "denied") {
     icon = BellOff;
     title = "Notifications are blocked";
-    detail = "Allow notifications for Hiil Model School in your browser or phone settings, then come back and enable them here.";
+    detail = `Allow notifications for ${SCHOOL_NAME} in your browser or phone settings, then come back and enable them here.`;
     action = null;
   } else if (push.status === "unsupported") {
     icon = Info;

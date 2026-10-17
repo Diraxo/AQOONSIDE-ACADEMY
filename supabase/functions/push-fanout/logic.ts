@@ -31,7 +31,7 @@ export const GENERIC_BODY: Record<string, string> = {
   PAYROLL: "A payroll update is available.",
 };
 export const FALLBACK_BODY = "You have a new notification";
-export const PUSH_TITLE = "Hiil Model School";
+export const PUSH_TITLE = "AQOONSIDE SCHOOL";
 
 // One title per notification type -- says WHAT happened; the body (below) says the specific,
 // privacy-safe detail. Falls back to the app identity (PUSH_TITLE) for any type not listed here.

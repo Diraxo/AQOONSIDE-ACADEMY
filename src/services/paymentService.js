@@ -153,6 +153,10 @@ export function createPaymentService() {
       if (error) throw error;
       return mapMethod(data);
     },
+    async deleteMethod(id) {
+      const { error } = await supabase.from("payment_methods").delete().eq("id", id);
+      if (error) throw error;
+    },
     async setMethodActive(id, active) {
       const { error } = await supabase.from("payment_methods").update({ active }).eq("id", id);
       if (error) throw error;

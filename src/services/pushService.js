@@ -15,9 +15,9 @@ import { getFirebaseConfig, isFirebaseConfigured, getVapidKey } from "../lib/fir
 export const PUSH_SW_URL = "/firebase-messaging-sw.js";
 export const PUSH_SW_SCOPE = "/";
 
-const DEVICE_KEY = "hiil.push.deviceId";
-const optInKey = (uid) => `hiil.push.optin.${uid}`;
-const dismissKey = (uid) => `hiil.push.dismissed.${uid}`;
+const DEVICE_KEY = "aqoonside.push.deviceId";
+const optInKey = (uid) => `aqoonside.push.optin.${uid}`;
+const dismissKey = (uid) => `aqoonside.push.dismissed.${uid}`;
 
 function safeStorage(win) {
   try { return win?.localStorage || null; } catch { return null; }

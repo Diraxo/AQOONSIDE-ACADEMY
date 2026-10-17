@@ -1,44 +1,12 @@
 import React, { useRef, useState } from "react";
 import { Download, Printer } from "lucide-react";
 import { Logo, Modal } from "./ui";
-import cashierSignatureSrc from "../assets/cashier-signature.png";
-import schoolStampSrc from "../assets/school-stamp.png";
+import { SCHOOL_FULL_NAME, SCHOOL_FULL_NAME_AM, SCHOOL_CONTACT_TEL_LINE, SCHOOL_STAMP, CASHIER_SIGNATURE } from "../config/branding";
 import { downloadReceiptAsPdf } from "../utils/pdf";
 import { formatMoney } from "../utils/constants";
 
-// Pre-cropped, background-removed cashier signature (src/assets/cashier-signature.png, generated
-// from the original scan) — the real ink signature on a transparent background, never a typed
-// name standing in for a signature.
-function CashierSignatureImage({ height = 44, className = "" }) {
-  return (
-    <img
-      src={cashierSignatureSrc}
-      alt="Cashier's signature"
-      className={`inline-block align-bottom object-contain pointer-events-none ${className}`}
-      style={{ height }}
-    />
-  );
-}
-
-// The school's real round ink seal (src/assets/school-stamp.png — background removed, blue kept
-// exactly as stamped). Placed like an actual rubber-stamp impression on the physical pad: sitting
-// over the footer near the cashier's signature, slightly rotated, a touch translucent so any text
-// underneath still reads. Applied to every voucher, paid or not, the way the school stamps its
-// whole receipt pad.
-function SchoolStamp({ size = 132, className = "" }) {
-  return (
-    <img
-      src={schoolStampSrc}
-      alt="Hiil Model School official seal"
-      className={`pointer-events-none select-none ${className}`}
-      style={{ width: size, height: "auto", opacity: 0.82, transform: "rotate(-8deg)", mixBlendMode: "multiply" }}
-    />
-  );
-}
-
-// Mirrors the school's real pre-printed cash receipt voucher pad (bilingual Amharic/English,
-// 5 pre-printed payer/student lines, fixed payment-method checkboxes) — a batch of more than 5
-// students just keeps numbering past 5 (6, 7, 8, ...) on the same voucher rather than paginating.
+// Follows the cash receipt voucher pad layout (bilingual Amharic/English, fixed payment-method
+// checkboxes). One numbered line per student on the receipt (1 student = line 1 only, 6 = lines 1–6).
 // Layout follows the physical pad exactly so a filled-in printout looks like a filled-in pad page.
 const VOUCHER_METHODS = [
   { key: "Cash", am: "ካሽ", en: "Cash" },
@@ -47,6 +15,7 @@ const VOUCHER_METHODS = [
   { key: "Sahay", am: "ሰሃይ", en: "Sahay" },
   { key: "E-sahal", am: "ኢሳሃል", en: "E-sahal" },
   { key: "ACC/Bank", am: "አክ/ባንክ", en: "ACC/Bank" },
+  { key: "Kaafi", am: "ካፊ", en: "Kaafi" },
   { key: "Others", am: "አተረስ", en: "Others" },
 ];
 
@@ -64,9 +33,8 @@ function Checkbox({ checked }) {
   );
 }
 
-// `entries`: { name, grade, feeLines? } rows, one per student — padded to 5 blank pre-printed
-// lines when there are fewer, but never truncated when there are more (row 6, 7, 8, ... just
-// keep going). `grade` already reads like "Grade 1B" (class label), so it's printed as-is with
+// `entries`: { name, grade, feeLines? } rows, one per student — one numbered line each, no blank padding
+// lines (1 student prints line 1 only, 6 students print lines 1–6). `grade` already reads like "Grade 1B" (class label), so it's printed as-is with
 // no extra "Grade" caption in front of it. `feeLines` is that student's own non-bus fee lines
 // (e.g. "School Fee – Installment 1") printed under their name so a receipt for several children
 // shows exactly what each one paid for — kept separate from `busFeeLines` (the dedicated Bus Fee
@@ -89,21 +57,19 @@ function CashReceiptVoucher({
   cashierName = "",
   pageLabel = null,
 }) {
-  const rows = entries.length >= 5 ? entries : [...entries, ...Array(5 - entries.length).fill({ name: "", grade: "", feeLines: [] })];
+  // One numbered line per student actually on this receipt — no empty padding lines.
+  const rows = entries.length > 0 ? entries : [{ name: "", grade: "", feeLines: [] }];
   const isKnownMethod = VOUCHER_METHODS.slice(0, -1).some((m) => m.key === method);
 
   return (
     <div className="receipt-voucher relative bg-[#fdf9f0] text-slate-900 font-serif border border-slate-900 p-5 text-[13px] leading-tight max-w-[720px] mx-auto">
-      {/* Official school seal — stamped in the lower-right like on the physical pad, just clear of
-          the cashier's signature so both stay legible */}
-      <SchoolStamp size={128} className="absolute right-[8.5rem] bottom-2 z-10" />
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <Logo size={64} />
         <div className="flex-1 text-center">
-          <p className="text-base font-medium">ሂል ሞዴል ትምህርት ቤት</p>
-          <p className="text-3xl font-bold -mt-1">Hiil Model School</p>
-          <p className="text-sm mt-1">0915111821 / 0901382701 / 0915188114 &nbsp; Jigjiga, Ethiopia</p>
+          <p className="text-[19px] leading-tight font-bold">{SCHOOL_FULL_NAME}</p>
+          <p className="text-[15px] leading-tight font-bold mt-0.5">{SCHOOL_FULL_NAME_AM}</p>
+          {SCHOOL_CONTACT_TEL_LINE && <p className="text-sm font-semibold mt-1">{SCHOOL_CONTACT_TEL_LINE}</p>}
           <div className="text-sm mt-0.5">
             <span className="block">የገንዘብ መቀቢያ ደረሰኝ</span>
             <span className="block font-semibold underline underline-offset-2">Cash Receipt Voucher</span>
@@ -122,7 +88,7 @@ function CashReceiptVoucher({
         {rows.map((row, i) => (
           <div key={i}>
             <div className="flex items-baseline gap-2">
-              {i === 0 && <span className="shrink-0">የከፋይ ስም</span>}
+              {i === 0 && <span className="shrink-0">የከፋይ ስም{rows.length === 1 ? " · Received From" : ""}</span>}
               {i === 1 && <span className="shrink-0">Received From</span>}
               <span className="shrink-0">{i + 1}.</span>
               <Blank value={row.name} className="flex-1" />
@@ -208,8 +174,12 @@ function CashReceiptVoucher({
         <div className="text-right">
           <p className="leading-none">የገንዘብ ተቀባይ ፊርማ</p>
           <p className="font-medium leading-none mt-0.5">Cashier's Signature</p>
-          <div className="flex justify-end mt-1">
-            <CashierSignatureImage height={44} />
+          {/* Cashier's signature with the school stamp pressed over it, as on the signed paper copy. */}
+          <div className="mt-1.5 flex items-end justify-end gap-3">
+            <img src={SCHOOL_STAMP} alt="" className="h-28 w-28 object-contain opacity-90" />
+            <div className="relative h-16 w-40 border-b border-slate-900">
+              <img src={CASHIER_SIGNATURE} alt="" className="absolute left-1/2 bottom-1 h-14 -translate-x-1/2 object-contain" />
+            </div>
           </div>
         </div>
       </div>

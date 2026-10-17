@@ -174,7 +174,7 @@ describe("the workspace scope", () => {
   });
 
   it("an unknown remembered year falls back to the current year", async () => {
-    window.localStorage.setItem("hiil.workspaceAcademicYear", "deleted-year");
+    window.localStorage.setItem("aqoonside.workspaceAcademicYear", "deleted-year");
     await mount();
     await act(async () => data().setWorkspaceScopeEnabled(true));
     expect(data().db.workspaceYear.id).toBe("y19");

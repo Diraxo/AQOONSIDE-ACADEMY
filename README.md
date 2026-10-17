@@ -1,6 +1,6 @@
-# Hiil Model School — School Management System
+# AQOONSIDE SCHOOL — School Management System
 
-A **React + Vite** single-page app for running Hiil Model School: admissions,
+A **React + Vite** single-page app for running AQOONSIDE SCHOOL: admissions,
 classes and curriculum, timetables, attendance and leave, homework, exam
 results and report cards, fees and payments, payroll and expenses, behaviour
 records, announcements, 1:1 messaging, and a staff activity feed.
@@ -54,10 +54,10 @@ project → Settings → Environment Variables, Production scope).
 
 Leave blank locally (reset links then open your dev server via the browser
 origin). In production set it to the deployed origin
-(`https://hiil-model-school.vercel.app`) so recovery emails always return users
+(`https://<your-production-domain>`) so recovery emails always return users
 to production. The same origin **must** also be listed under **Supabase
 Dashboard → Authentication → URL Configuration → Redirect URLs** (add both
-`https://hiil-model-school.vercel.app` and `https://hiil-model-school.vercel.app/**`),
+`https://<your-production-domain>` and `https://<your-production-domain>/**`),
 and the project **Site URL** should be that origin — otherwise Supabase ignores
 `redirectTo` and falls back to the Site URL. See
 [`docs/password-reset.md`](docs/password-reset.md) for the full flow.

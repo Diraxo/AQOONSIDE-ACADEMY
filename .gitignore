@@ -16,3 +16,6 @@ supabase/functions/.env
 .vercel
 
 .vercel
+
+# Local Claude session files
+.claude/

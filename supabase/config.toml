@@ -2,7 +2,7 @@
 # https://supabase.com/docs/guides/local-development/cli/config
 # A string used to distinguish different Supabase projects on the same host. Defaults to the
 # working directory name when running `supabase init`.
-project_id = "tilmaan-modern-academy"
+project_id = "aqoonside"
 
 [api]
 enabled = true
@@ -162,9 +162,9 @@ site_url = "http://127.0.0.1:3000"
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
 # NOTE: this block configures the LOCAL `supabase start` stack only. The hosted project's
 # allow-list lives in the Supabase Dashboard (Authentication > URL Configuration) and must
-# include the production origin (https://hiil-model-school.vercel.app) for password-reset
+# include the production origin (https://<your-production-domain>) for password-reset
 # links to return users to production instead of localhost.
-additional_redirect_urls = ["https://127.0.0.1:3000", "http://localhost:5173", "https://hiil-model-school.vercel.app"]
+additional_redirect_urls = ["https://127.0.0.1:3000", "http://localhost:5173", "https://<your-production-domain>"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to auth.external_url.
@@ -257,7 +257,7 @@ otp_expiry = 3600
 # Emails > Templates > "Reset Password") and must be updated there by hand with the
 # same markup from supabase/templates/recovery.html. See docs/password-reset.md.
 [auth.email.template.recovery]
-subject = "Reset your Hiil Model School password"
+subject = "Reset your AQOONSIDE SCHOOL password"
 content_path = "./supabase/templates/recovery.html"
 # (path is relative to the project root, matching the scaffolded invite example above)
 

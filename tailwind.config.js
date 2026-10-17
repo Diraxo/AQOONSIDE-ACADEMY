@@ -7,34 +7,36 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Hiil Model School brand — sampled from the school's signage (deep signage
-        // red field, gold trim, white text). `brand` replaces the old `sky` accent
-        // everywhere it meant "primary"; `gold` is the warm detail accent.
+        // AQOONSIDE SCHOOL brand — sampled from the official emblem (src/assets/aqoonside-logo-original.jpeg):
+        // royal blue #103E95 (primary), golden yellow #FBC11F (accent), red #D32521 (sparing accent).
+        // `brand` is the primary scale; `gold` is the warm detail accent.
         brand: {
-          50: "#fdf3f2",
-          100: "#fbe4e2",
-          200: "#f6c8c5",
-          300: "#eda19c",
-          400: "#e2716b",
-          500: "#d1483f",
-          600: "#c1272d", // primary — the sampled signage red
-          700: "#a11f26",
-          800: "#851d23",
-          900: "#6f1c22",
-          950: "#3d0d0f",
+          50: "#f0f5fc",
+          100: "#dfe8f8",
+          200: "#bccdf0",
+          300: "#8aaae3",
+          400: "#4f7fd0",
+          500: "#2459b8",
+          600: "#103e95", // primary — the sampled emblem blue
+          700: "#0d3278",
+          800: "#0b2960",
+          900: "#0a224f",
+          950: "#06142f",
         },
         gold: {
-          50: "#fdf8ec",
-          100: "#faedcc",
-          200: "#f4d992",
-          300: "#eec25c",
-          400: "#e9a63c", // detail accent — the signage gold
-          500: "#dc8a26",
-          600: "#c26b1f",
-          700: "#9c4e1d",
-          800: "#7f3f1e",
-          900: "#6b351c",
+          50: "#fffaeb",
+          100: "#fef0c3",
+          200: "#fde28a",
+          300: "#fcd155",
+          400: "#fbc11f", // accent — the sampled emblem yellow
+          500: "#e0a508",
+          600: "#a87305",
+          700: "#855a05",
+          800: "#6b4806",
+          900: "#573a07",
         },
+        // Supporting accent from the emblem's open book — use sparingly (rules, small highlights).
+        emblemred: "#d32521",
       },
     },
   },

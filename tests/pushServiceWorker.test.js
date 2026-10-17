@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 
 const ROOT = path.resolve(__dirname, "..");
 const SW_SRC = fs.readFileSync(path.join(ROOT, "public", "firebase-messaging-sw.js"), "utf8");
-const ORIGIN = "https://hiil-model-school.vercel.app";
+const ORIGIN = "https://school.example";
 
 // Loads the real worker file into a sandbox with a fake ServiceWorkerGlobalScope.
 function loadWorker({ clients = [], ua = "Mozilla/5.0 (Linux; Android 14) Chrome/120" } = {}) {
@@ -60,21 +60,21 @@ describe("service worker registration surface", () => {
 
   it("the Android status-bar badge icon is a dedicated asset, never the full-color content icon", () => {
     expect(fs.existsSync(path.join(ROOT, "public", "icons", "notification-badge.png"))).toBe(true);
-    const iconMatch = SW_SRC.match(/HIIL_ICON\s*=\s*"([^"]+)"/);
-    const badgeMatch = SW_SRC.match(/HIIL_BADGE\s*=\s*"([^"]+)"/);
+    const iconMatch = SW_SRC.match(/AQOONSIDE_ICON\s*=\s*"([^"]+)"/);
+    const badgeMatch = SW_SRC.match(/AQOONSIDE_BADGE\s*=\s*"([^"]+)"/);
     expect(iconMatch[1]).not.toBe(badgeMatch[1]);
     expect(badgeMatch[1]).toMatch(/notification-badge\.png/);
   });
 });
 
 describe("background / closed-app push", () => {
-  it("closed app (no windows): shows an OS notification branded Hiil Model School with the app icon, tag and click url", async () => {
+  it("closed app (no windows): shows an OS notification branded AQOONSIDE SCHOOL with the app icon, tag and click url", async () => {
     const { fire, self } = loadWorker({ clients: [] });
-    await fire("push", pushEvent({ data: { title: "Hiil Model School", body: "Amina Hassan: New announcement", url: "/?n=abc", tag: "n1", notificationId: "n1", type: "ANNOUNCEMENT", badge: "3" } }));
+    await fire("push", pushEvent({ data: { title: "AQOONSIDE SCHOOL", body: "Amina Hassan: New announcement", url: "/?n=abc", tag: "n1", notificationId: "n1", type: "ANNOUNCEMENT", badge: "3" } }));
     expect(self.registration.showNotification).toHaveBeenCalledTimes(1);
     const [title, opts] = self.registration.showNotification.mock.calls[0];
-    expect(title).toBe("Hiil Model School");
-    expect(opts).toMatchObject({ body: "Amina Hassan: New announcement", icon: "/icons/icon-192.png?v=hiil1", badge: "/icons/notification-badge.png?v=hiil1", tag: "n1", data: { url: "/?n=abc", notificationId: "n1", type: "ANNOUNCEMENT" } });
+    expect(title).toBe("AQOONSIDE SCHOOL");
+    expect(opts).toMatchObject({ body: "Amina Hassan: New announcement", icon: "/icons/icon-192.png?v=aq1", badge: "/icons/notification-badge.png?v=aq1", tag: "n1", data: { url: "/?n=abc", notificationId: "n1", type: "ANNOUNCEMENT" } });
   });
 
   it("backgrounded / minimized page (window exists but hidden): still shows the OS notification", async () => {
@@ -98,7 +98,7 @@ describe("background / closed-app push", () => {
     await fire("push", { data: { json: () => { throw new Error("bad"); }, text: () => "plain text" } });
     await fire("push", {});
     expect(self.registration.showNotification).toHaveBeenCalledTimes(2);
-    expect(self.registration.showNotification.mock.calls[0][0]).toBe("Hiil Model School");
+    expect(self.registration.showNotification.mock.calls[0][0]).toBe("AQOONSIDE SCHOOL");
     expect(self.registration.showNotification.mock.calls[0][1].body).toBe("plain text");
     expect(self.registration.showNotification.mock.calls[1][1].body).toBe("You have a new notification");
   });
@@ -145,7 +145,7 @@ describe("foreground push", () => {
     const { fire, self } = loadWorker({ clients: [c] });
     await fire("push", pushEvent({ data: { body: "New announcement", notificationId: "n3", type: "ANNOUNCEMENT" } }));
     expect(self.registration.showNotification).not.toHaveBeenCalled();
-    expect(c.postMessage).toHaveBeenCalledWith({ type: "HIIL_PUSH_RECEIVED", notificationId: "n3", title: "Hiil Model School", body: "New announcement", pushType: "ANNOUNCEMENT" });
+    expect(c.postMessage).toHaveBeenCalledWith({ type: "AQOONSIDE_PUSH_RECEIVED", notificationId: "n3", title: "AQOONSIDE SCHOOL", body: "New announcement", pushType: "ANNOUNCEMENT" });
   });
 
   it("iOS/WebKit must show every push, so a visible page still gets the (tag-replaced) notification there", async () => {
@@ -166,7 +166,7 @@ describe("notification click routing", () => {
     await fire("notificationclick", ev);
     expect(ev.notification.close).toHaveBeenCalled();
     expect(c.focus).toHaveBeenCalled();
-    expect(c.postMessage).toHaveBeenCalledWith({ type: "HIIL_NOTIFICATION_CLICK", notificationId: "abc", url: "/?n=abc" });
+    expect(c.postMessage).toHaveBeenCalledWith({ type: "AQOONSIDE_NOTIFICATION_CLICK", notificationId: "abc", url: "/?n=abc" });
     expect(self.clients.openWindow).not.toHaveBeenCalled();
   });
 

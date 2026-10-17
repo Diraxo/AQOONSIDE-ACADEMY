@@ -18,7 +18,7 @@ import { ROLES, GRADES } from "../utils/constants";
 import { canManageAcademicYears } from "../utils/studentPermissions";
 import { fmtDate } from "../utils/helpers";
 import { formatAcademicYearLabel, computeBreakRange, addDays, academicYearStatus } from "../utils/academicCalendar";
-import { academicYearLifecycle, academicYearAttention, suggestedNextEcYear, defaultYearFormForEcYear, calendarFormProblem, PHASE_LABEL } from "../utils/academicYearScope";
+import { dueUpcomingYear, academicYearLifecycle, academicYearAttention, suggestedNextEcYear, defaultYearFormForEcYear, calendarFormProblem, PHASE_LABEL } from "../utils/academicYearScope";
 import { academicYearBillingPeriods } from "../utils/billingPeriods";
 import { formatEthiopianDateFromKey, gregorianToEthiopian } from "../utils/ethiopianCalendar";
 
@@ -106,10 +106,53 @@ function AcademicYearViewBanner() {
 // Lifecycle banner (Owner / Educational Director dashboards)
 // ---------------------------------------------------------------------------------------------------
 
+// Teacher: the school is between academic years — nothing of the old year is open and nothing of the new
+// one exists until the Owner / Educational Director makes the next year current.
+function AcademicYearEndedScreen({ year }) {
+  return (
+    <div role="alert" className="max-w-xl mx-auto mt-10 text-center rounded-2xl border border-slate-200 bg-white p-8" data-testid="academic-year-ended">
+      <div className="mx-auto w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mb-4"><CalendarDays size={22} /></div>
+      <h2 className="text-lg font-semibold text-slate-800">Academic year ended</h2>
+      <p className="text-sm text-slate-500 mt-2">
+        {year ? <>The <strong>{formatAcademicYearLabel(year)}</strong> academic year has ended and is now closed. </> : "The academic year has ended. "}
+        Attendance, homework, results and class lists are unavailable until the school starts the next academic year and assigns your classes.
+      </p>
+      <p className="text-xs text-slate-400 mt-4">You'll get access again automatically once the new year begins. Contact the school office if you have questions.</p>
+    </div>
+  );
+}
+
+// Parent: the year is over — their children's information stays readable, labelled Ended, and nothing changes.
+function AcademicYearEndedParentBanner({ year }) {
+  return (
+    <div role="status" className="rounded-lg border border-slate-300 bg-slate-100 text-slate-700 px-3.5 py-2.5 mb-4 text-sm flex items-center gap-2" data-testid="academic-year-ended-parent">
+      <Badge tone="slate">Ended</Badge>
+      <p className="min-w-0">
+        <strong>{year ? formatAcademicYearLabel(year) : "This academic year"}</strong> has ended. You can still view your children's information, but it is read-only until the new academic year begins.
+      </p>
+    </div>
+  );
+}
+
 function AcademicYearAttentionBanner({ onReview, onCreateNext }) {
   const auth = useAuth();
   const ay = useAcademicYear();
   if (!canManageAcademicYears(auth.currentUser) || !ay.currentAcademicYear) return null;
+  // An upcoming year whose start date has come but that nobody has activated yet: remind the admin.
+  const due = dueUpcomingYear(ay.academicYears, todayKey());
+  if (due) {
+    return (
+      <div role="status" className="rounded-lg border border-amber-200 bg-amber-50 text-amber-900 px-4 py-3 mb-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold flex items-center gap-1.5"><AlertTriangle size={15} />{formatAcademicYearLabel(due)} has started</p>
+            <p className="text-xs mt-0.5">Teachers and parents stay on the previous year until you make it current. Register every student or mark them "not returning", then activate it.</p>
+          </div>
+          <PrimaryButton onClick={onReview}>Set up &amp; activate</PrimaryButton>
+        </div>
+      </div>
+    );
+  }
   const a = academicYearAttention(ay.currentAcademicYear, todayKey());
   if (!a) return null;
   const detail = a.title === "Academic year ending soon"
@@ -680,4 +723,5 @@ function ReenrollRow({ w, yearId, data, toast, run, busy }) {
 
 export {
   AcademicYearTag, AcademicYearSelector, AcademicYearViewBanner, AcademicYearAttentionBanner, AcademicYearSettingsModal, NewAcademicYearWizard,
+  AcademicYearEndedScreen, AcademicYearEndedParentBanner,
 };

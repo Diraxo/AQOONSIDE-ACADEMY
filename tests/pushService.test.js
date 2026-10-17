@@ -32,7 +32,7 @@ function make(o = {}) {
   const svc = createPushService({
     window: win, navigator: nav, Notification: NotificationApi, storage,
     supabase: { rpc }, isConfigured: () => o.configured ?? true,
-    loadFirebase: async () => fb, firebaseConfig: () => ({ projectId: "hiil-model-school" }), vapidKey: () => "PUBLIC_VAPID",
+    loadFirebase: async () => fb, firebaseConfig: () => ({ projectId: "test-project" }), vapidKey: () => "PUBLIC_VAPID",
   });
   return { svc, nav, fb, rpc, requestPermission, storage, registration };
 }
@@ -165,7 +165,7 @@ describe("refresh / logout / disable / re-enable", () => {
     const a = make({ permission: "granted" });
     expect(await a.svc.refresh("u")).toEqual({ ok: false, code: "skipped" });
     const b = make({ permission: "default" });
-    b.storage.setItem("hiil.push.optin.u", "1");
+    b.storage.setItem("aqoonside.push.optin.u", "1");
     expect(await b.svc.refresh("u")).toEqual({ ok: false, code: "skipped" });
     expect(a.rpc).not.toHaveBeenCalled();
   });

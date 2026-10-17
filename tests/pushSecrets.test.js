@@ -35,7 +35,7 @@ describe("Firebase / FCM secret hygiene", () => {
   });
 
   it("the service-account JSON is git-ignored and untracked", () => {
-    const probe = "hiil-model-school-firebase-adminsdk-fbsvc-abc123.json";
+    const probe = "example-firebase-adminsdk-abc123.json";
     const ignored = execFileSync("git", ["check-ignore", "-q", probe], { cwd: ROOT, stdio: "pipe" });
     expect(ignored).toBeDefined(); // exit 0 => ignored (execFileSync throws otherwise)
     const tracked = execFileSync("git", ["ls-files"], { cwd: ROOT }).toString().split("\n");

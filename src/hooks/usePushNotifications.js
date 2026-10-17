@@ -1,3 +1,4 @@
+import { SCHOOL_NAME } from "../config/branding";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getPushService } from "../services/pushService";
 import { useToast } from "../context/ToastContext";
@@ -6,7 +7,7 @@ import { useToast } from "../context/ToastContext";
 export const PUSH_MESSAGES = {
   enabled: "Notifications are on for this device.",
   disabled: "Notifications are off for this device.",
-  denied: "Notifications are blocked. Allow them for Hiil Model School in your browser or phone settings, then try again.",
+  denied: `Notifications are blocked. Allow them for ${SCHOOL_NAME} in your browser or phone settings, then try again.`,
   dismissed: "Notifications were not enabled. You can turn them on any time from Notifications.",
   "service-worker-failed": "Couldn't start the notification service on this device. Please reload and try again.",
   "token-failed": "Couldn't connect to the notification service. Check your connection and try again.",
@@ -15,7 +16,7 @@ export const PUSH_MESSAGES = {
 };
 
 export const UNSUPPORTED_MESSAGES = {
-  "ios-needs-install": "On iPhone, add Hiil Model School to your Home Screen (Share → Add to Home Screen), open it from there, then turn on notifications.",
+  "ios-needs-install": `On iPhone, add ${SCHOOL_NAME} to your Home Screen (Share → Add to Home Screen), open it from there, then turn on notifications.`,
   "no-notifications": "This browser doesn't support notifications.",
   "no-service-worker": "This browser doesn't support the background service needed for notifications.",
   "no-push": "This browser doesn't support push notifications.",

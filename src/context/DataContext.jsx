@@ -1,3 +1,4 @@
+import { SCHOOL_NAME } from "../config/branding";
 import React, { useState, useEffect, useMemo, useCallback, createContext, useContext, useRef } from "react";
 import {
   ROLES, ROLE_LABEL, STUDENT_STATUS, BEHAVIOR_TYPES, SEVERITIES, SCHOOL_DAYS, TEACHER_UNAVAILABLE_STATUSES,
@@ -17,7 +18,7 @@ import {
 } from "../utils/ethiopianCalendar";
 import { academicYearDateProblems, academicYearBillingPeriods } from "../utils/billingPeriods";
 import { computeStaffPayrollSummary } from "../utils/payrollLedger";
-import { buildAcademicYearScope, reenrollmentCandidates } from "../utils/academicYearScope";
+import { buildAcademicYearScope, reenrollmentCandidates, expensesForYear } from "../utils/academicYearScope";
 import { scheduleForFeeType, installmentsForSchedule, obligationForInstallment, adjustmentsTotal, allocationsTotal, netOwedForObligation, feeRowsForStudentIn } from "../utils/feeLedger";
 import {
   studentIdentity as computeStudentIdentity, staffIdentity as computeStaffIdentity,
@@ -77,7 +78,7 @@ import {
 } from "lucide-react";
 
 const DataCtx = createContext(null);
-const WORKSPACE_YEAR_KEY = "hiil.workspaceAcademicYear";
+const WORKSPACE_YEAR_KEY = "aqoonside.workspaceAcademicYear";
 
 // Day-to-day write actions that always act on the OPERATIONAL academic year (enrolment, attendance,
 // results, homework, fee/payment/payroll entries, student documents). They are refused while an admin is
@@ -92,6 +93,7 @@ const YEAR_SCOPED_WRITES = [
   "addResultEvidencePage", "replaceResultEvidencePage", "removeResultEvidencePage", "reorderResultEvidencePages",
   "generateReportCard", "setReportCardPromotion", "publishReportCard", "lockReportCard", "reopenReportCard",
   "recordPayrollPayment", "recordSalaryAdvance", "updateTeacherAssignments",
+  "createExpense", "updateExpense", "deleteExpense",
 ];
 
 // The academic-year RPCs raise plain-English exceptions; pass those through and explain the one case a
@@ -1290,7 +1292,9 @@ function DataProvider({ children }) {
       paymentMethods: paymentMethodsRaw,
       payments: paymentsRaw,
       paymentAllocations: allocationsRaw,
-      expenses,
+      // Expenses belong to the academic year their date falls in; a new year starts with none.
+      allExpenses: expenses,
+      expenses: expensesForYear(expenses, academicYears, workspaceYear),
       // Phase 6: communications -> real Supabase. RLS scopes notifications to the caller and
       // messages/conversations to the caller's threads, so account switching can't leak a prior
       // user's feed.
@@ -1590,7 +1594,7 @@ function DataProvider({ children }) {
           return {
             studentId: student ? student.id : (obligation ? obligation.studentId : null),
             studentName: student ? studentFullName(student) : "Student",
-            grade: student ? classLabel(getClass(student.classId)) : "",
+            grade: student ? (classLabel(getClass(student.classId)) || `${student.grade ?? ""}${student.section ?? ""}`) : "",
             amount: alloc.amount,
             isBus: feeType?.category === "TRANSPORT",
             description: describeAllocation(db, alloc),
@@ -1729,7 +1733,7 @@ function DataProvider({ children }) {
         const collected = monthlyFinanceReport(year.id).totals.total;
         const payrollPaid = db.payrollPayments.filter((p) => months.has(p.month)).reduce((s, p) => s + p.amount, 0)
           + db.salaryAdvances.filter((a) => months.has(a.payrollMonth)).reduce((s, a) => s + a.amount, 0);
-        const expenses = db.expenses.filter((e) => e.date && e.date >= year.yearStart && e.date <= year.yearEnd).reduce((s, e) => s + e.totalAmount, 0);
+        const expenses = expensesForYear(db.allExpenses, db.academicYears, year).reduce((s, e) => s + e.totalAmount, 0);
         return { year, collected, payrollPaid, expenses };
       },
       studentIdentity, staffIdentity, userIdentity, leaveSubjectIdentity, announcementSenderLabel,
@@ -4561,6 +4565,20 @@ function DataProvider({ children }) {
           return { ok: false, message: financeErrorMessage(e, "Couldn't rename this payment method.") };
         }
       },
+      async deletePaymentMethod(id) {
+        try {
+          const m = db.paymentMethods.find((x) => x.id === id);
+          await paymentService.deleteMethod(id);
+          await refetchPayments();
+          if (m) await logActivityFeed(`Payment method "${m.name}" was deleted.`);
+          return { ok: true };
+        } catch (e) {
+          console.error("Failed to delete payment method", e);
+          // 23503 = foreign_key_violation: payments already use this method.
+          if (e && e.code === "23503") return { ok: false, message: "This method has recorded payments, so it can't be deleted. Deactivate it instead." };
+          return { ok: false, message: financeErrorMessage(e, "Couldn't delete this payment method.") };
+        }
+      },
       async setPaymentMethodActive(id, active) {
         try {
           await paymentService.setMethodActive(id, active);
@@ -4955,7 +4973,7 @@ function DataProvider({ children }) {
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="animate-spin text-brand-600" size={32} />
-          <p className="text-slate-500 text-sm">Loading Hiil Model School…</p>
+          <p className="text-slate-500 text-sm">Loading {SCHOOL_NAME}…</p>
         </div>
       </div>
     );

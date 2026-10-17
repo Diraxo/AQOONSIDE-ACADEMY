@@ -71,13 +71,13 @@ hosted project is configured in the Dashboard:
 
 | Setting | Value |
 | --- | --- |
-| Site URL | `https://hiil-model-school.vercel.app` |
-| Redirect URLs | `https://hiil-model-school.vercel.app`, `https://hiil-model-school.vercel.app/**`, plus any local dev origin (`http://localhost:5173`) |
+| Site URL | `https://<your-production-domain>` |
+| Redirect URLs | `https://<your-production-domain>`, `https://<your-production-domain>/**`, plus any local dev origin (`http://localhost:5173`) |
 
 Vercel → Project → Settings → Environment Variables (Production):
-`VITE_SITE_URL=https://hiil-model-school.vercel.app`.
+`VITE_SITE_URL=https://<your-production-domain>`.
 
-### Email branding — “Hiil Model School”
+### Email branding — “AQOONSIDE SCHOOL”
 
 Current state: the project uses Supabase’s **default** Auth email sender
 (`noreply@mail.app.supabase.io`, display name “Supabase Auth”) and the default
@@ -86,23 +86,23 @@ recovery template. Branding the email requires Dashboard/SMTP changes that
 
 1. **Sender name + address** — Authentication → Emails → **SMTP Settings**:
    enable custom SMTP (e.g. Resend / SendGrid / Postmark), set
-   *Sender name* = `Hiil Model School`, *Sender email* = a school-domain address.
+   *Sender name* = `AQOONSIDE SCHOOL`, *Sender email* = a school-domain address.
    The API key is an SMTP secret — it lives in the Dashboard only, never in the
    repo. Until custom SMTP is configured the visible sender stays “Supabase Auth”.
 2. **Template** — Authentication → Emails → **Templates → Reset Password**.
    Replace the body with school-branded HTML. Keep the CTA link as the supported
    variable `{{ .ConfirmationURL }}` (do **not** hardcode the project URL, token,
    or email). Suggested copy:
-   - Subject: `Reset your Hiil Model School password`
-   - Heading: `Hiil Model School`
-   - Body: “We received a request to reset the password for your Hiil Model
-     School account. Click the button below to choose a new password. If you
+   - Subject: `Reset your AQOONSIDE SCHOOL password`
+   - Heading: `AQOONSIDE SCHOOL`
+   - Body: “We received a request to reset the password for your AQOONSIDE SCHOOL
+     account. Click the button below to choose a new password. If you
      didn’t request this, you can ignore this email.”
    - Button: `Reset your password` → `{{ .ConfirmationURL }}`
 3. **Logo** — the app’s logo currently lives as a base64 data URI in
    `src/utils/constants.js` (`LOGO_DATA_URI`) and as `public/favicon.png`. Email
    clients need an absolute `https://` image URL. Use the production-hosted
-   favicon (`https://hiil-model-school.vercel.app/favicon.png`) or upload the
+   favicon (`https://<your-production-domain>/favicon.png`) or upload the
    school logo to a public Storage bucket / CDN and reference that URL in the
    template `<img>`. Do not invent a URL and do not reference a `src/assets/…`
    path — it isn’t reachable from the email.
@@ -113,7 +113,7 @@ email-change templates — edit only **Reset Password**.
 ## Manual test plan
 
 Browser verification: **NOT PERFORMED** by the implementer — run these against
-production (`https://hiil-model-school.vercel.app`) after deploy.
+production (`https://<your-production-domain>`) after deploy.
 
 | # | Step | Expected |
 | --- | --- | --- |
@@ -124,5 +124,5 @@ production (`https://hiil-model-school.vercel.app`) after deploy.
 | 5 | Log in with the **new** password | Login succeeds; same role/permissions, no new profile |
 | 6 | Open an old/expired/reused recovery link | **InvalidRecoveryLinkScreen** — “This password reset link is invalid or has expired.” No reset form, no fake success |
 | 7 | On the reset screen, click **Set new password** repeatedly | Exactly one update request (`useMutationGuard`) |
-| 8 | Watch the address bar through the whole flow | Stays on `https://hiil-model-school.vercel.app`; tokens/hash are scrubbed after completion; a refresh returns to normal login |
+| 8 | Watch the address bar through the whole flow | Stays on `https://<your-production-domain>`; tokens/hash are scrubbed after completion; a refresh returns to normal login |
 | 9 | Mismatched passwords / empty fields / < 6 chars | Inline error, no network call; Supabase still rejects a weak password if it slips through |

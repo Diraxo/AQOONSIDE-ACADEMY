@@ -1,3 +1,4 @@
+import { SCHOOL_NAME, SCHOOL_STAMP, CASHIER_SIGNATURE } from "../../config/branding";
 import React, { useState, useEffect, useMemo, useCallback, createContext, useContext, useRef } from "react";
 import { AppearanceSettings } from "../../components/AppearanceSettings";
 import {
@@ -100,7 +101,7 @@ function AdminDashboard({ openStudent, onOpenActivity, setPage }) {
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-semibold text-slate-800">Good morning, Administrator</h1>
-        <p className="text-sm text-slate-400 mt-0.5">Hiil Model School — here's what's happening today, {fmtDate(new Date())}.</p>
+        <p className="text-sm text-slate-400 mt-0.5">{SCHOOL_NAME} — here's what's happening today, {fmtDate(new Date())}.</p>
         <AcademicYearTag className="mt-1" />
       </div>
 
@@ -1638,7 +1639,7 @@ function ParentFormModal({ open, onClose }) {
           <div className="space-y-2">
             {children.map((c, i) => (
               <div key={i} className="flex gap-2">
-                <input value={c} onChange={(e) => setChild(i, e.target.value)} placeholder="e.g. TMA-2026-00031" className={inputCls} />
+                <input value={c} onChange={(e) => setChild(i, e.target.value)} placeholder="e.g. STU-000031" className={inputCls} />
                 {children.length > 1 && <button type="button" onClick={() => removeChildRow(i)} className="text-red-500 hover:bg-red-50 rounded-lg px-2"><X size={16} /></button>}
               </div>
             ))}
@@ -1711,7 +1712,7 @@ function ManageParentModal({ parent, onClose }) {
           </div>
           <Field label="Connect another child by Student ID">
             <div className="flex gap-2">
-              <input value={connectId} onChange={(e) => setConnectId(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") doConnect(e); }} placeholder="e.g. TMA-2026-00031" className={inputCls} />
+              <input value={connectId} onChange={(e) => setConnectId(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") doConnect(e); }} placeholder="e.g. STU-000031" className={inputCls} />
               <PrimaryButton type="button" onClick={doConnect} icon={Plus} loading={connecting} loadingText="Connecting…">Connect</PrimaryButton>
             </div>
           </Field>
@@ -6019,7 +6020,7 @@ function allocationDetail(data, allocation) {
   const stu = ob && data.getStudent(ob.studentId);
   const isBus = feeType?.category === "TRANSPORT";
   const label = feeType && inst ? (isBus ? `${feeType.name} – ${inst.label}` : `${feeType.name} ${inst.label}`) : "Fee";
-  return { studentId: ob?.studentId, studentName: stu ? data.studentFullName(stu) : "Unknown student", grade: data.classLabel(data.getClass(stu?.classId)), isBus, label };
+  return { studentId: ob?.studentId, studentName: stu ? data.studentFullName(stu) : "Unknown student", grade: data.classLabel(data.getClass(stu?.classId)) || (stu ? `${stu.grade ?? ""}${stu.section ?? ""}` : ""), isBus, label };
 }
 
 // Rebuilds the exact saved receipt for a previously recorded payment — the single place every
@@ -6227,7 +6228,7 @@ function RecordPaymentModal({ open, onClose, student, students }) {
       nextDrafts[c.id] = Object.fromEntries(groups.map((g) => [g.feeType.id, pick(g.rows)]));
     });
     setDrafts(nextDrafts);
-    setMethod(data.db.paymentMethods.find((m) => m.active)?.name || "Cash");
+    setMethod(data.db.paymentMethods.find((m) => m.active && m.name.toLowerCase() !== "other")?.name || "Cash");
     setCustomMethod("");
     setDate(new Date().toISOString().slice(0, 10));
     setNote("");
@@ -6418,8 +6419,8 @@ function RecordPaymentModal({ open, onClose, student, students }) {
           <div className="grid sm:grid-cols-2 gap-x-3">
             <Field label="Payment method" required>
               <select className={inputCls} value={method} onChange={(e) => setMethod(e.target.value)}>
-                {data.db.paymentMethods.filter((m) => m.active).map((m) => <option key={m.id} value={m.name}>{m.name}</option>)}
-                <option value="__custom__">Other (type below)…</option>
+                {data.db.paymentMethods.filter((m) => m.active && m.name.toLowerCase() !== "other").map((m) => <option key={m.id} value={m.name}>{m.name}</option>)}
+                <option value="__custom__">Other</option>
               </select>
             </Field>
             <Field label="Payment received on">
@@ -7066,7 +7067,7 @@ function PayslipModal({ paymentId, onClose }) {
         <div className="payslip-print theme-paper" ref={printRef}>
           <div className="flex flex-col items-center text-center mb-4">
             <Logo size={44} />
-            <p className="text-sm font-semibold text-slate-800 mt-1">Hiil Model School</p>
+            <p className="text-sm font-semibold text-slate-800 mt-1">{SCHOOL_NAME}</p>
             <p className="text-xs text-slate-400">Salary Payslip — {slip.monthLabel}</p>
           </div>
           <div className="border border-slate-200 rounded-lg divide-y divide-slate-100 mb-4">
@@ -7091,6 +7092,17 @@ function PayslipModal({ paymentId, onClose }) {
             <PaymentStatusBadge status={slip.status} />
           </div>
           {slip.status === "PARTIAL" && <p className="text-xs text-amber-600 mt-1">{formatMoney(slip.remaining)} still outstanding for this month.</p>}
+          <div className="mt-6 flex justify-end">
+            <div className="text-right text-xs text-slate-500">
+              <div className="flex items-end justify-end gap-3">
+                <img src={SCHOOL_STAMP} alt="" className="h-28 w-28 object-contain opacity-90" />
+                <div className="relative h-16 w-40 border-b border-slate-900">
+                  <img src={CASHIER_SIGNATURE} alt="" className="absolute left-1/2 bottom-1 h-14 -translate-x-1/2 object-contain" />
+                </div>
+              </div>
+              <p className="mt-1">Finance Signature &amp; School Stamp</p>
+            </div>
+          </div>
         </div>
       )}
       <div className="flex justify-end gap-2 pt-4 no-print">

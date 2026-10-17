@@ -1,0 +1,5 @@
+-- Intentionally empty: no data is seeded automatically on `supabase db reset`.
+--
+-- Everything the app needs on a fresh database is created by the migrations themselves
+-- (timetable_config singleton, default payment methods, storage buckets + policies).
+-- The first Owner is bootstrapped manually with supabase/seed_owner.sql (placeholders only).

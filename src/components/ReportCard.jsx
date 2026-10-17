@@ -3,17 +3,15 @@ import { Printer, Download } from "lucide-react";
 import { Modal, resultTotals } from "./ui";
 import { useData } from "../context/DataContext";
 import { useAuth } from "../context/AuthContext";
-import { LOGO_DATA_URI, GRADES, round2 } from "../utils/constants";
+import { GRADES, round2 } from "../utils/constants";
 import { downloadElementAsA4Pdf } from "../utils/pdf";
 import { currentAcademicYear } from "../utils/academicCalendar";
+import { SCHOOL_NAME, SCHOOL_MOTTO, SCHOOL_LOGO, SCHOOL_STAMP, SCHOOL_CONTACT, SCHOOL_CONTACT_LINE } from "../config/branding";
 
-// Fixed school address block on the printed card — not per-student data, so it isn't sourced
-// from the student record (the app has no region/city fields; this is the school's own location).
-const SCHOOL_REGION = "Somali";
-const SCHOOL_CITY = "Jigjiga, Ethiopia";
+// The school's own region/city come from config/branding.js (not per-student data); blank until the school supplies them.
 
-// A4-portrait, print-first "Student Yearly Report Card" in the school's brand (logo, bilingual
-// name, signage red + gold, framed page, faint logo watermark): no student photo, no seal/stamp,
+// A4-portrait, print-first "Student Yearly Report Card" in the school's brand (logo, school
+// name, royal blue + gold, framed page, faint logo watermark): no student photo, no seal/stamp,
 // no auto-filled date — teacher and principal signatures plus every date are left blank so the
 // school signs/stamps on paper after printing. Shared by the Director/Owner's Report Cards page and the Parent's Results page.
 function ReportCardModal({ student, classId, onClose }) {
@@ -82,27 +80,27 @@ function ReportCardModal({ student, classId, onClose }) {
       <style>{"@media print { @page { size: A4 portrait; margin: 0; } .report-card-print * { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }"}</style>
       <div className="report-card-print theme-paper overflow-x-auto">
         <div ref={printRef} className="relative flex flex-col bg-white text-slate-900 font-serif mx-auto" style={{ width: "210mm", minHeight: "297mm", padding: "7mm", boxSizing: "border-box" }}>
-          {/* School-branded page frame: signage-red outer rule, gold inner rule (the logo's own colours) */}
+          {/* School-branded page frame: royal-blue outer rule, golden inner rule (the emblem's own colours) */}
           <div className="relative flex flex-1 flex-col border-[3px] border-brand-700 p-[1.2mm]">
             <div className="relative flex flex-1 flex-col overflow-hidden border border-gold-400" style={{ padding: "8mm" }}>
               {/* Faint logo watermark behind the marks table */}
-              <img src={LOGO_DATA_URI} alt="" aria-hidden="true" className="absolute pointer-events-none select-none" style={{ width: "125mm", height: "125mm", top: "50%", left: "50%", transform: "translate(-50%, -46%)", opacity: 0.06 }} />
+              <img src={SCHOOL_LOGO} alt="" aria-hidden="true" className="absolute pointer-events-none select-none" style={{ width: "125mm", height: "125mm", top: "50%", left: "50%", transform: "translate(-50%, -46%)", opacity: 0.06 }} />
 
               {/* Blank photo box — no student photo, matches the physical pad */}
               <div className="absolute border-2 border-slate-800 bg-white" style={{ top: "8mm", right: "8mm", width: "26mm", height: "31mm" }} />
 
               {/* Letterhead */}
               <div className="relative text-center pb-2 mb-3">
-                <img src={LOGO_DATA_URI} alt="Hiil Model School" className="mx-auto object-contain" style={{ width: "27mm", height: "27mm" }} />
-                <p className="mt-1 text-sm font-semibold text-brand-800">ሂል ሞዴል ትምህርት ቤት</p>
-                <h1 className="text-[26px] leading-tight font-extrabold tracking-[0.12em] text-brand-700 uppercase">Hiil Model School</h1>
+                <span className="mx-auto block overflow-hidden rounded-full" style={{ width: "27mm", height: "27mm" }}><img src={SCHOOL_LOGO} alt={`${SCHOOL_NAME} logo`} className="block h-full w-full object-cover" style={{ transform: "scale(1.2)" }} /></span>
+                                <h1 className="text-[26px] leading-tight font-extrabold tracking-[0.12em] text-brand-700 uppercase">{SCHOOL_NAME}</h1>
                 <div className="flex items-center justify-center gap-2 mt-0.5">
                   <span className="h-px w-12 bg-gold-400" />
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gold-600">Center of Excellence</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gold-700">{SCHOOL_MOTTO}</p>
                   <span className="h-px w-12 bg-gold-400" />
                 </div>
-                <p className="mt-1 text-[10.5px] text-slate-600">Jigjiga, Ethiopia &nbsp;·&nbsp; 0915111821 / 0901382701 / 0915188114</p>
+                {SCHOOL_CONTACT_LINE && <p className="mt-1 text-[10.5px] text-slate-600">{SCHOOL_CONTACT_LINE}</p>}
                 <div className="mt-2 h-[3px] bg-brand-700" />
+                <div className="mt-[1.5px] h-px bg-emblemred" />
                 <div className="mt-[2px] h-px bg-gold-400" />
               </div>
 
@@ -120,8 +118,8 @@ function ReportCardModal({ student, classId, onClose }) {
             </p>
             <p>
               <span className="font-semibold">Student ID: </span>{(student.studentId || "—").toUpperCase()}
-              <span className="font-semibold ml-6">Region: </span>{SCHOOL_REGION.toUpperCase()}
-              <span className="font-semibold ml-6">City: </span>{SCHOOL_CITY.toUpperCase()}
+              <span className="font-semibold ml-6">Region: </span>{(SCHOOL_CONTACT.region || "—").toUpperCase()}
+              <span className="font-semibold ml-6">City: </span>{(SCHOOL_CONTACT.city || "—").toUpperCase()}
             </p>
           </div>
 
@@ -188,7 +186,9 @@ function ReportCardModal({ student, classId, onClose }) {
             </div>
             <div className="flex justify-between items-end">
               <div style={{ width: "58%" }}>
-                <div className="border-b border-slate-900 h-6" />
+                <div className="relative border-b border-slate-900 h-6">
+                  <img src={SCHOOL_STAMP} alt="" className="absolute right-2 bottom-0 h-20 w-20 object-contain opacity-90" />
+                </div>
                 <p className="mt-1">Principal's Sign</p>
               </div>
               <div style={{ width: "34%" }} className="text-right">
@@ -196,7 +196,7 @@ function ReportCardModal({ student, classId, onClose }) {
               </div>
             </div>
             <div className="mt-5 h-px bg-gold-400" />
-            <p className="mt-1 text-center text-[10px] uppercase tracking-[0.2em] text-brand-800">Hiil Model School · Center of Excellence</p>
+            <p className="mt-1 text-center text-[10px] uppercase tracking-[0.2em] text-brand-800">{SCHOOL_NAME} · {SCHOOL_MOTTO}</p>
           </div>
             </div>
           </div>

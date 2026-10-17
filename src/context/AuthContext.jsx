@@ -52,26 +52,17 @@ async function resolveProfilePhoto(mapped) {
 // all-or-nothing INVALID_STUDENT_IDS:.../ALREADY_LINKED_STUDENT_IDS:... exception into per-child
 // field errors the registration form can show inline, matching the "Student ID not found" /
 // "already linked" copy from the product spec.
+// One deliberately vague message for every Student ID problem (unknown, mistyped, or already
+// linked to another parent), so nobody can probe which IDs exist or are taken.
+const STUDENT_ID_CONTACT_MESSAGE = "We couldn't complete your registration with the Student ID provided. Please contact the School Director for assistance.";
+
 async function linkChildrenOrExplain(studentIds) {
   const { error } = await supabase.rpc("self_register_link_children", { p_student_ids: studentIds });
   if (!error) return { ok: true };
   const msg = error.message || "";
   const invalid = msg.match(/^INVALID_STUDENT_IDS:(.+)$/);
   const taken = msg.match(/^ALREADY_LINKED_STUDENT_IDS:(.+)$/);
-  if (invalid) {
-    return {
-      ok: false,
-      fieldErrors: Object.fromEntries(invalid[1].split(",").map((id) => [id, "Student ID not found."])),
-      message: "We couldn't find one or more of the Student IDs you entered.",
-    };
-  }
-  if (taken) {
-    return {
-      ok: false,
-      fieldErrors: Object.fromEntries(taken[1].split(",").map((id) => [id, "This student is already linked to a parent account."])),
-      message: "One or more children are already connected to a parent account.",
-    };
-  }
+  if (invalid || taken) return { ok: false, message: STUDENT_ID_CONTACT_MESSAGE };
   return { ok: false, message: "Your account was created, but connecting your child(ren) failed. Please sign in and try again, or contact the school office." };
 }
 
@@ -257,14 +248,8 @@ function AuthProvider({ children }) {
     // atomically; this pre-check is just so a typo never creates an account.
     try {
       const statuses = await createParentService().checkStudentIds(ids);
-      const fieldErrors = {};
-      ids.forEach((id) => {
-        const status = statuses.get(id);
-        if (status === "not_found") fieldErrors[id] = "Student ID not found.";
-        else if (status === "already_linked") fieldErrors[id] = "This student is already linked to a parent account.";
-      });
-      if (Object.keys(fieldErrors).length > 0) {
-        return { ok: false, fieldErrors, message: "Please fix the Student ID(s) below. No account was created." };
+      if (ids.some((id) => statuses.get(id) !== "available")) {
+        return { ok: false, message: STUDENT_ID_CONTACT_MESSAGE };
       }
     } catch { /* pre-check is best-effort; self_register_link_children re-validates below */ }
 

@@ -1,4 +1,4 @@
-/* Hiil Model School -- push service worker (FCM Web Push).
+/* AQOONSIDE SCHOOL -- push service worker (FCM Web Push).
  *
  * Served at /firebase-messaging-sw.js with scope "/". There is no other service worker in this app
  * and this one deliberately has NO fetch handler and NO cache: it changes nothing about how pages or
@@ -17,12 +17,12 @@
  * at all) just skip it. Only a notification id travels in the URL; the app re-checks the signed-in
  * user's access when it opens.
  */
-var HIIL_ICON = "/icons/icon-192.png?v=hiil1";
+var AQOONSIDE_ICON = "/icons/icon-192.png?v=aq1";
 // Android's status-bar "badge" icon is alpha-masked by the OS (only the alpha channel is used, tinted
 // to whatever color the system wants) -- it must be a monochrome, mostly-transparent glyph, never the
 // full-color content icon above. Using the same file for both renders as a solid dark blob on Android.
-var HIIL_BADGE = "/icons/notification-badge.png?v=hiil1";
-var HIIL_TITLE = "Hiil Model School";
+var AQOONSIDE_BADGE = "/icons/notification-badge.png?v=aq1";
+var AQOONSIDE_TITLE = "AQOONSIDE SCHOOL";
 
 self.addEventListener("install", function () {
   self.skipWaiting();
@@ -33,7 +33,7 @@ self.addEventListener("activate", function (event) {
 });
 
 /** Accepts only same-origin relative targets; anything else becomes the app root. */
-function hiilSafeUrl(raw) {
+function aqSafeUrl(raw) {
   try {
     if (typeof raw !== "string" || raw.charAt(0) !== "/" || raw.charAt(1) === "/" || raw.charAt(1) === "\\") return "/";
     var u = new URL(raw, self.location.origin);
@@ -45,7 +45,7 @@ function hiilSafeUrl(raw) {
 }
 
 /** Normalises FCM's payload shapes into one { title, body, url, tag, notificationId, type } object. */
-function hiilParsePayload(event) {
+function aqParsePayload(event) {
   var j = null;
   try { j = event.data ? event.data.json() : null; } catch (e) { j = null; }
   if (!j || typeof j !== "object") {
@@ -62,10 +62,10 @@ function hiilParsePayload(event) {
     if (!isNaN(n2) && n2 >= 0) badge = n2;
   }
   return {
-    title: String(d.title || n.title || HIIL_TITLE),
+    title: String(d.title || n.title || AQOONSIDE_TITLE),
     body: String(d.body || n.body || "You have a new notification"),
-    url: hiilSafeUrl(d.url || (id ? "/?n=" + encodeURIComponent(id) : "/")),
-    tag: String(d.tag || id || "hiil-general"),
+    url: aqSafeUrl(d.url || (id ? "/?n=" + encodeURIComponent(id) : "/")),
+    tag: String(d.tag || id || "aqoonside-general"),
     notificationId: id,
     type: String(d.type || ""),
     badge: badge,
@@ -75,7 +75,7 @@ function hiilParsePayload(event) {
 /** Best-effort: sets the installed PWA's app-icon badge to the given count (authoritative, sent by the
  * server -- see supabase/functions/push-fanout/logic.ts buildMessage). Unsupported browsers (desktop
  * Chrome when not installed, Firefox, iOS Safari) simply have no setAppBadge/clearAppBadge to call. */
-async function hiilSyncBadge(count) {
+async function aqSyncBadge(count) {
   try {
     if (count === null || count === undefined) return;
     if (count > 0 && self.registration.setAppBadge) await self.registration.setAppBadge(count);
@@ -83,32 +83,32 @@ async function hiilSyncBadge(count) {
   } catch (e) { /* Badging API not supported here -- no-op */ }
 }
 
-function hiilIsIos() {
+function aqIsIos() {
   try { return /iPhone|iPad|iPod/.test(self.navigator.userAgent || ""); } catch (e) { return false; }
 }
 
 self.addEventListener("push", function (event) {
   event.waitUntil((async function () {
-    var p = hiilParsePayload(event);
+    var p = aqParsePayload(event);
     var wins = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
     var visible = false;
     for (var i = 0; i < wins.length; i++) {
       if (wins[i].visibilityState === "visible") visible = true;
       // Tell any open page so it can show an in-app toast (its notification list refreshes itself
       // through Supabase Realtime -- no polling).
-      wins[i].postMessage({ type: "HIIL_PUSH_RECEIVED", notificationId: p.notificationId, title: p.title, body: p.body, pushType: p.type });
+      wins[i].postMessage({ type: "AQOONSIDE_PUSH_RECEIVED", notificationId: p.notificationId, title: p.title, body: p.body, pushType: p.type });
     }
     // The app-icon badge always reflects the server's authoritative unread count, regardless of
     // whether the OS banner below is shown or suppressed for a visible foreground tab.
-    await hiilSyncBadge(p.badge);
+    await aqSyncBadge(p.badge);
     // App is open and visible: the in-app toast + notification center already tell the user, so skip
     // the OS banner. iOS/WebKit requires every push to be user-visible (repeated silent pushes can get
     // the subscription revoked), so there we always show it (the tag makes it replace, not stack).
-    if (visible && !hiilIsIos()) return;
+    if (visible && !aqIsIos()) return;
     await self.registration.showNotification(p.title, {
       body: p.body,
-      icon: HIIL_ICON,
-      badge: HIIL_BADGE,
+      icon: AQOONSIDE_ICON,
+      badge: AQOONSIDE_BADGE,
       tag: p.tag,
       data: { url: p.url, notificationId: p.notificationId, type: p.type },
     });
@@ -118,7 +118,7 @@ self.addEventListener("push", function (event) {
 self.addEventListener("notificationclick", function (event) {
   event.notification.close();
   var data = event.notification.data || {};
-  var url = hiilSafeUrl(data.url);
+  var url = aqSafeUrl(data.url);
   event.waitUntil((async function () {
     var wins = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
     for (var i = 0; i < wins.length; i++) {
@@ -127,7 +127,7 @@ self.addEventListener("notificationclick", function (event) {
       try { sameOrigin = new URL(c.url).origin === self.location.origin; } catch (e) { sameOrigin = false; }
       if (!sameOrigin) continue;
       if (c.focus) await c.focus();
-      c.postMessage({ type: "HIIL_NOTIFICATION_CLICK", notificationId: data.notificationId || "", url: url });
+      c.postMessage({ type: "AQOONSIDE_NOTIFICATION_CLICK", notificationId: data.notificationId || "", url: url });
       return;
     }
     if (self.clients.openWindow) await self.clients.openWindow(url);

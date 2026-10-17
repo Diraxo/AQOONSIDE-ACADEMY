@@ -1,3 +1,4 @@
+import { SCHOOL_NAME } from "../../config/branding";
 import React from "react";
 import { Wallet, AlertTriangle, Banknote, Receipt as ReceiptIcon } from "lucide-react";
 import { formatMoney } from "../../utils/constants";
@@ -35,7 +36,7 @@ function FinanceDashboard({ setPage, onOpenActivity }) {
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-semibold text-slate-800">Finance & Operations</h1>
-        <p className="text-sm text-slate-400 mt-0.5">Hiil Model School — fees, payroll, and expenses at a glance.</p>
+        <p className="text-sm text-slate-400 mt-0.5">{SCHOOL_NAME} — fees, payroll, and expenses at a glance.</p>
         <AcademicYearTag className="mt-1" />
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

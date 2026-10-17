@@ -65,7 +65,7 @@ create trigger on_auth_user_self_registered
 -- per-id status (never any student field), so a parent -- or anyone, this is intentionally
 -- callable while still anonymous, same as resetPasswordForEmail's non-leaking design elsewhere in
 -- this app -- can't learn anything about a student beyond "does this code exist / is it already
--- claimed", which the printed Student ID format (TMA-2026-00031, sequential) doesn't hide anyway.
+-- claimed", which the printed Student ID format (STU-000031, sequential) doesn't hide anyway.
 -- ---------------------------------------------------------------------
 
 create or replace function public.check_student_ids(p_student_ids text[])

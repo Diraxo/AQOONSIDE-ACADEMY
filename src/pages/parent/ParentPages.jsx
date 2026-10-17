@@ -1,3 +1,4 @@
+import { SCHOOL_NAME } from "../../config/branding";
 import React, { useState, useEffect, useMemo, useCallback, createContext, useContext, useRef } from "react";
 import {
   LayoutDashboard, Users, GraduationCap, UserCog, School, BookOpen, CalendarDays,
@@ -107,7 +108,7 @@ function ParentDashboard({ activeChildId, setActiveChildId }) {
     return (
       <div>
         <h1 className="text-xl font-semibold text-slate-800 mb-1">Welcome, {auth.currentUser.name.split(" ")[0]}</h1>
-        <EmptyState icon={GraduationCap} title="No Active Children" description="Your account currently has no active students enrolled at Hiil Model School. Historical records for your children remain available to the school." />
+        <EmptyState icon={GraduationCap} title="No Active Children" description={`Your account currently has no active students enrolled at ${SCHOOL_NAME}. Historical records for your children remain available to the school.`} />
       </div>
     );
   }

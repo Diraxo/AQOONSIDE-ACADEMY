@@ -57,8 +57,8 @@ export function listenForServiceWorkerMessages({ nav = typeof navigator !== "und
   const handler = (event) => {
     const m = event?.data;
     if (!m || typeof m !== "object") return;
-    if (m.type === "HIIL_NOTIFICATION_CLICK") setPendingNotification(m.notificationId);
-    else if (m.type === "HIIL_PUSH_RECEIVED" && onPush) onPush(m);
+    if (m.type === "AQOONSIDE_NOTIFICATION_CLICK") setPendingNotification(m.notificationId);
+    else if (m.type === "AQOONSIDE_PUSH_RECEIVED" && onPush) onPush(m);
   };
   sw.addEventListener("message", handler);
   return () => sw.removeEventListener("message", handler);

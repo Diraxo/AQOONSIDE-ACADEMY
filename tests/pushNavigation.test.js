@@ -17,7 +17,7 @@ describe("notification click -> pending id (only ids, only valid uuids)", () => 
 
   it("cold start (?n=<id>): captures the id and strips it from the address bar", () => {
     const replaceState = vi.fn();
-    const win = { location: { search: `?n=${ID}&x=1`, href: `https://hiil-model-school.vercel.app/?n=${ID}&x=1#h` }, history: { state: null, replaceState } };
+    const win = { location: { search: `?n=${ID}&x=1`, href: `https://school.example/?n=${ID}&x=1#h` }, history: { state: null, replaceState } };
     expect(captureNotificationFromLocation(win)).toBe(ID);
     expect(getPendingNotification()).toBe(ID);
     expect(replaceState).toHaveBeenCalledWith(null, "", "/?x=1#h");
@@ -37,12 +37,12 @@ describe("notification click -> pending id (only ids, only valid uuids)", () => 
     const seen = vi.fn();
     subscribePendingNotification(seen);
     const stop = listenForServiceWorkerMessages({ nav, onPush });
-    handler({ data: { type: "HIIL_NOTIFICATION_CLICK", notificationId: ID } });
+    handler({ data: { type: "AQOONSIDE_NOTIFICATION_CLICK", notificationId: ID } });
     expect(getPendingNotification()).toBe(ID);
     expect(seen).toHaveBeenCalledWith(ID);
-    handler({ data: { type: "HIIL_PUSH_RECEIVED", body: "hi" } });
-    expect(onPush).toHaveBeenCalledWith({ type: "HIIL_PUSH_RECEIVED", body: "hi" });
-    handler({ data: { type: "HIIL_NOTIFICATION_CLICK", notificationId: "forged" } }); // ignored
+    handler({ data: { type: "AQOONSIDE_PUSH_RECEIVED", body: "hi" } });
+    expect(onPush).toHaveBeenCalledWith({ type: "AQOONSIDE_PUSH_RECEIVED", body: "hi" });
+    handler({ data: { type: "AQOONSIDE_NOTIFICATION_CLICK", notificationId: "forged" } }); // ignored
     handler({ data: null });
     expect(getPendingNotification()).toBe(ID);
     stop();

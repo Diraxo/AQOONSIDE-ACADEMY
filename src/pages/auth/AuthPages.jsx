@@ -1,3 +1,4 @@
+import { SCHOOL_NAME, SCHOOL_MOTTO } from "../../config/branding";
 import React, { useState, useEffect, useMemo, useCallback, createContext, useContext, useRef } from "react";
 import {
   LayoutDashboard, Users, GraduationCap, UserCog, School, BookOpen, CalendarDays,
@@ -15,9 +16,7 @@ import {
 } from "../../components/ui";
 import { useAuth } from "../../context/AuthContext";
 import { useMutationGuard } from "../../hooks/useMutationGuard";
-import { createParentService } from "../../services/parentService";
 
-const parentService = createParentService();
 
 
 function LoginScreen() {
@@ -49,12 +48,13 @@ function LoginScreen() {
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
-        <div className="rounded-2xl bg-brand-600 border-b-4 border-gold-400 px-6 py-7 mb-4 flex flex-col items-center text-center shadow-sm">
-          <div className="bg-white theme-paper rounded-2xl p-2 shadow-sm">
+        <div className="rounded-2xl bg-brand-600 border-b-4 border-gold-400 px-6 py-7 mb-4 flex flex-col items-center text-center shadow-sm relative overflow-hidden">
+          <span className="absolute inset-x-0 top-0 h-1 bg-emblemred" />
+          <div className="bg-white theme-paper rounded-full p-1.5 shadow-sm">
             <Logo size={60} />
           </div>
-          <h1 className="mt-3 text-xl font-bold text-white tracking-tight">Hiil Model School</h1>
-          <p className="text-xs text-gold-200 mt-1 font-medium uppercase tracking-wide">Center of Excellence</p>
+          <h1 className="mt-3 text-xl font-bold text-white tracking-tight">{SCHOOL_NAME}</h1>
+          <p className="text-xs text-gold-200 mt-1 font-medium uppercase tracking-wide">{SCHOOL_MOTTO}</p>
         </div>
 
         <Card className="p-6 shadow-sm">
@@ -118,25 +118,6 @@ function RegisterScreen({ onBack }) {
     setChildren((c) => c.map((ch, idx) => (idx === i ? { studentId: val, status: null, error: "" } : ch)));
   }
 
-  async function checkChild(i) {
-    const id = (children[i]?.studentId || "").trim();
-    if (!id) return;
-    try {
-      const statuses = await parentService.checkStudentIds([id]);
-      const status = statuses.get(id) || null;
-      setChildren((c) => c.map((ch, idx) => {
-        if (idx !== i || ch.studentId.trim() !== id) return ch;
-        return {
-          ...ch,
-          status,
-          error: status === "not_found" ? "Student ID not found." : status === "already_linked" ? "This student is already linked to a parent account." : "",
-        };
-      }));
-    } catch {
-      // Live pre-check is a convenience only -- submit() re-validates server-side regardless.
-    }
-  }
-
   async function submit(e) {
     e && e.preventDefault && e.preventDefault();
     setError("");
@@ -146,19 +127,10 @@ function RegisterScreen({ onBack }) {
     if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
     if (!phone.trim()) { setError("Phone number is required."); return; }
     const ids = [...new Set(children.map((c) => c.studentId.trim()).filter(Boolean))];
-    if (ids.length === 0) { setError("Enter a valid Student ID."); return; }
+    if (ids.length === 0) { setError("Please enter your child's Student ID."); return; }
 
     await run(async () => {
       const res = await auth.signUp({ fullName, email, password, phone, studentIds: ids });
-      if (res.fieldErrors) {
-        setChildren((c) => c.map((ch) => {
-          const trimmed = ch.studentId.trim();
-          const key = Object.keys(res.fieldErrors).find((k) => k.toLowerCase() === trimmed.toLowerCase());
-          return key ? { ...ch, error: res.fieldErrors[key] } : ch;
-        }));
-        setError(res.message);
-        return;
-      }
       if (!res.ok) { setError(res.message); return; }
       setDone({ pendingConfirmation: !!res.pendingConfirmation, message: res.message });
     });
@@ -205,7 +177,7 @@ function RegisterScreen({ onBack }) {
                 </button>
               </div>
             </Field>
-            <Field label="Phone number" required><input value={phone} onChange={(e) => setPhone(e.target.value)} className={inputCls} placeholder="+252 61..." /></Field>
+            <Field label="Phone number" required><input value={phone} onChange={(e) => setPhone(e.target.value)} className={inputCls} placeholder="+251 9..." /></Field>
             <div className="mb-1.5 flex items-center justify-between">
               <span className="block text-xs font-medium text-slate-500">Children</span>
               <button type="button" onClick={() => setChildren((c) => [...c, { studentId: "", status: null, error: "" }])} className="text-xs text-brand-600 font-medium flex items-center gap-1"><Plus size={13} /> Add another child</button>
@@ -216,13 +188,11 @@ function RegisterScreen({ onBack }) {
                   <input
                     value={c.studentId}
                     onChange={(e) => updateChild(i, e.target.value)}
-                    onBlur={() => checkChild(i)}
-                    placeholder="e.g. TMA-2026-00031"
-                    className={inputCls + (c.error ? " border-red-300" : c.status === "available" ? " border-emerald-300" : "")}
+                    placeholder="Enter your childs ID"
+                    className={inputCls}
                   />
                   {children.length > 1 && <button type="button" onClick={() => setChildren((arr) => arr.filter((_, idx) => idx !== i))} className="text-slate-400 hover:text-red-500 px-2"><X size={16} /></button>}
                 </div>
-                {c.error && <span className="block text-xs text-red-500 mt-1">{c.error}</span>}
               </div>
             ))}
             {error && <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mt-2 mb-1">{error}</p>}
@@ -324,7 +294,7 @@ function PasswordRecoveryScreen() {
         <div className="flex flex-col items-center mb-6">
           <Logo size={56} />
           <h1 className="mt-3 text-lg font-semibold text-slate-800">Reset your password</h1>
-          {!done && <p className="text-xs text-slate-400 mt-1">Enter a new password for your Hiil Model School account.</p>}
+          {!done && <p className="text-xs text-slate-400 mt-1">Enter a new password for your {SCHOOL_NAME} account.</p>}
         </div>
 
         {done ? (

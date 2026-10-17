@@ -78,6 +78,38 @@ function academicYearAttention(year, todayKey) {
   return null;
 }
 
+// The upcoming year whose school year has begun (and not ended) — it must take over as the current year
+// on its start date. Mirrors activate_due_academic_year() in the database; null when nothing is due.
+function dueUpcomingYear(years, todayKey) {
+  const list = Array.isArray(years) ? years : [];
+  const current = currentAcademicYear(list);
+  const due = list
+    .filter((y) => !y.isCurrent && !y.closedAt && y.yearStart && y.yearEnd && y.yearStart <= todayKey && y.yearEnd >= todayKey)
+    .sort(byStartDesc)[0];
+  if (!due) return null;
+  if (current && current.isCurrent && (current.yearStart || "") >= due.yearStart) return null;
+  return due;
+}
+
+// What a role may do as of today. Teachers and parents work only in the CURRENT year, and only while it
+// is running: once it has ended and its result-finalization window has passed ("closed") — or no year is
+// current — the school is between years.
+//   open       everything works as normal
+//   read_only  parent: sees their children's information, labelled "Ended", nothing can be changed
+//   blocked    teacher: sees "academic year ended" and nothing else until a new year is made current
+// Owner / Educational Director / Finance are never limited here (they have to create the next year).
+function academicYearAccess(role, years, todayKey) {
+  if (role !== "TEACHER" && role !== "PARENT") return { state: "open" };
+  const list = Array.isArray(years) ? years : [];
+  if (list.length === 0) return { state: "open" }; // nothing configured yet: not a "year ended" situation
+  const current = list.find((y) => y.isCurrent);
+  const lc = current ? academicYearLifecycle(current, todayKey) : null;
+  const ended = !current || !!(lc && lc.closed);
+  if (!ended) return { state: "open" };
+  const last = current || [...list].sort(byStartDesc).find((y) => y.closedAt) || [...list].sort(byStartDesc)[0];
+  return { state: role === "PARENT" ? "read_only" : "blocked", year: last, closeDate: lc ? lc.closeDate : (last && last.yearEnd) || null };
+}
+
 // The year the workspace is showing: the admin's selection when it names a real year, otherwise the
 // operational (current) year. Never derived from today's date — the caller passes the id.
 function resolveWorkspaceYear(years, selectedId) {
@@ -122,6 +154,25 @@ function yearForBillingMonth(years, monthKey) {
   const hits = (years || []).filter((y) => academicYearBillingPeriods(y).periods.some((p) => p.monthKey === monthKey));
   if (hits.length <= 1) return hits[0] || null;
   return hits.find((y) => y.isCurrent) || hits.sort(byStartDesc)[0];
+}
+
+// The days whose expenses belong to `year`. Expenses carry only a date, so the year is decided by it:
+// from the day after the previous year ended (spending to prepare a year in the summer break counts for
+// the year it prepares) to the year's last day; the newest year also owns everything after its end, until
+// a newer year exists. The first year owns everything before it. Every date belongs to exactly one year.
+function expenseYearWindow(years, year) {
+  const list = [...(years || [])].sort(byStartDesc);
+  const i = list.findIndex((y) => y.id === year.id);
+  const older = i === -1 ? null : list[i + 1];
+  return {
+    from: older && older.yearEnd ? addDays(older.yearEnd, 1) : null,
+    to: i === 0 ? null : year.yearEnd,
+  };
+}
+function expensesForYear(expenses, years, year) {
+  if (!year) return expenses || [];
+  const { from, to } = expenseYearWindow(years, year);
+  return (expenses || []).filter((e) => e.date && (!from || e.date >= from) && (!to || e.date <= to));
 }
 
 // Whether a date key lies inside a year's dates.
@@ -220,6 +271,7 @@ function calendarFormProblem(form) {
 export {
   defaultYearFormForEcYear, calendarFormProblem,
   ENDING_SOON_DAYS, PHASE_LABEL, RETURNING_ELIGIBLE,
+  dueUpcomingYear, academicYearAccess, expenseYearWindow, expensesForYear,
   academicYearLifecycle, academicYearAttention, resolveWorkspaceYear, buildAcademicYearScope,
   yearForDate, yearForBillingMonth, dateInYear,
   nextGrade, reenrollmentCandidates, enrolledStudentIds, suggestedNextEcYear,

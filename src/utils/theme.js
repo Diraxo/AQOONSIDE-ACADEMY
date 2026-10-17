@@ -1,6 +1,6 @@
 // Appearance preference: "system" (default) | "light" | "dark". Device-local (localStorage) only;
 // nothing about it is sent to the backend. Kept free of React so it can also be used pre-render.
-export const THEME_KEY = "hiil-theme";
+export const THEME_KEY = "aqoonside-theme";
 export const THEME_MODES = ["system", "light", "dark"];
 export const DEFAULT_THEME = "system";
 export const THEME_COLORS = { light: "#f8fafc", dark: "#0b1220" };

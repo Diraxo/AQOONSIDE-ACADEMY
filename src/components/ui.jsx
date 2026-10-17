@@ -28,14 +28,20 @@ import { useToast } from "../context/ToastContext";
 import { useMutationGuard } from "../hooks/useMutationGuard";
 
 
+import { SCHOOL_NAME } from "../config/branding";
+
+// The emblem is a circle on a white square: clip to a circle and zoom slightly so the white margin
+// never shows (also keeps it clean on dark surfaces).
 function Logo({ size = 40 }) {
   return (
-    <img
-      src={LOGO_DATA_URI}
-      alt="Hiil Model School"
-      className="shrink-0 object-contain rounded-xl"
-      style={{ width: size, height: size }}
-    />
+    <span className="inline-block shrink-0 overflow-hidden rounded-full bg-white" style={{ width: size, height: size }}>
+      <img
+        src={LOGO_DATA_URI}
+        alt={`${SCHOOL_NAME} logo`}
+        className="block w-full h-full object-cover"
+        style={{ transform: "scale(1.2)" }}
+      />
+    </span>
   );
 }
 

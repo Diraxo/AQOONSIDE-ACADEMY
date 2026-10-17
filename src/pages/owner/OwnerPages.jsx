@@ -1,3 +1,4 @@
+import { SCHOOL_NAME } from "../../config/branding";
 import React, { useState, useEffect } from "react";
 import {
   Crown, Receipt, History, Banknote, ArrowLeftRight,
@@ -6,7 +7,7 @@ import {
   UserX, UserCheck,
 } from "lucide-react";
 import {
-  ROLES, ROLE_LABEL, STAFF_POSITIONS, formatMoney, ATTENDANCE_STATUSES,
+  ROLES, ROLE_LABEL, STAFF_POSITIONS, DEFAULT_PAYMENT_METHODS, formatMoney, ATTENDANCE_STATUSES,
   STAFF_SHIFT_PERIOD_LABEL, staffGroupLabel,
 } from "../../utils/constants";
 import { generatePassword, copyText, timeAgo, fmtDate, fullName } from "../../utils/helpers";
@@ -91,7 +92,7 @@ function OwnerDashboard({ setPage, onOpenActivity }) {
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-semibold text-slate-800 flex items-center gap-2"><Crown size={20} className="text-amber-500" /> School Dashboard</h1>
-        <p className="text-sm text-slate-400 mt-0.5">Hiil Model School — school-wide financial and operational position.</p>
+        <p className="text-sm text-slate-400 mt-0.5">{SCHOOL_NAME} — school-wide financial and operational position.</p>
         <AcademicYearTag className="mt-1" />
       </div>
 
@@ -1148,6 +1149,7 @@ function PaymentMethodsPage() {
   const [editingId, setEditingId] = useState(null);
   const [editingName, setEditingName] = useState("");
   const { busy, run, isBusy } = useMutationGuard();
+  const [deleteMethod, setDeleteMethod] = useState(null);
 
   function addMethod() {
     if (!newName.trim()) { toast("Please name the payment method.", "error"); return; }
@@ -1164,6 +1166,16 @@ function PaymentMethodsPage() {
     }, { key: `rename-payment-method:${id}` });
   }
 
+  // The receipt-pad methods (Cash … Kaafi) can't be renamed (the printed receipt ticks its box by
+  // name), but they can be deleted like any other method.
+  const isDefault = (m) => DEFAULT_PAYMENT_METHODS.some((d) => d.toLowerCase() === m.name.toLowerCase());
+  function removeMethod(m) {
+    run(async () => {
+      const res = await data.deletePaymentMethod(m.id);
+      toast(res.ok ? "Payment method deleted." : res.message, res.ok ? "success" : "error");
+    }, { key: `delete-payment-method:${m.id}` });
+  }
+
   return (
     <div>
       <h1 className="text-lg font-semibold text-slate-800 mb-1 flex items-center gap-2"><CreditCard size={18} /> Payment Methods</h1>
@@ -1178,7 +1190,9 @@ function PaymentMethodsPage() {
         <div className="divide-y divide-slate-100">
           {db.paymentMethods.map((m) => (
             <div key={m.id} className="flex items-center justify-between px-4 py-3">
-              {editingId === m.id ? (
+              {isDefault(m) ? (
+                <span className="text-sm font-medium text-slate-700">{m.name}</span>
+              ) : editingId === m.id ? (
                 <input autoFocus className={inputCls + " max-w-xs"} value={editingName} onChange={(e) => setEditingName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && saveRename(m.id)} onBlur={() => saveRename(m.id)} />
               ) : (
                 <button type="button" onClick={() => { setEditingId(m.id); setEditingName(m.name); }} className="text-sm font-medium text-slate-700 hover:text-brand-600 text-left">{m.name}</button>
@@ -1186,11 +1200,15 @@ function PaymentMethodsPage() {
               <div className="flex items-center gap-2">
                 <Badge tone={m.active ? "green" : "slate"}>{m.active ? "Active" : "Inactive"}</Badge>
                 <GhostButton onClick={() => data.setPaymentMethodActive(m.id, !m.active)}>{m.active ? "Deactivate" : "Activate"}</GhostButton>
+                <GhostButton onClick={() => setDeleteMethod(m)}>Delete</GhostButton>
               </div>
             </div>
           ))}
         </div>
       </Card>
+      <ConfirmDialog open={!!deleteMethod} onClose={() => setDeleteMethod(null)}
+        onConfirm={() => { const m = deleteMethod; setDeleteMethod(null); if (m) removeMethod(m); }}
+        title="Delete this payment method?" description={`"${deleteMethod?.name ?? ""}" will be removed. A method that already has payments can't be deleted -- deactivate it instead.`} confirmLabel="Delete" danger />
     </div>
   );
 }

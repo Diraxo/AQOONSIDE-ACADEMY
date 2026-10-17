@@ -881,10 +881,6 @@ grant execute on function public.school_today() to authenticated;
 -- ---------------------------------------------------------------------------------------------
 
 alter table public.academic_years alter column result_finalization_grace_days set default 15;
-update public.academic_years
-   set result_finalization_grace_days = 15
- where id = '86d4ff72-ac18-4568-ae08-df84d2aad9ff'
-   and result_finalization_grace_days = 30;
 
 -- ---------------------------------------------------------------------------------------------
 -- 11. Realtime (reuses the existing per-user channel in DataContext): a saved score / new

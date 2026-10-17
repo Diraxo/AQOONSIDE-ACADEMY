@@ -1,3 +1,4 @@
+import { SCHOOL_NAME, SCHOOL_MOTTO, SCHOOL_PORTAL_LABEL } from "../config/branding";
 import React, { useState, useEffect, useMemo, useCallback, createContext, useContext, useRef } from "react";
 import {
   LayoutDashboard, Users, GraduationCap, UserCog, School, CalendarDays,
@@ -31,7 +32,8 @@ import { canViewStudentPayments } from "../utils/studentPermissions";
 import { canViewPayroll } from "../utils/payrollPermissions";
 import { LoginScreen, RegisterScreen } from "../pages/auth/AuthPages";
 import { StudentProfilePage, AcademicYearSettings } from "../pages/admin/AdminPages";
-import { AcademicYearSelector, AcademicYearViewBanner, AcademicYearAttentionBanner } from "../components/academicYear";
+import { AcademicYearSelector, AcademicYearViewBanner, AcademicYearAttentionBanner, AcademicYearEndedScreen, AcademicYearEndedParentBanner } from "../components/academicYear";
+import { academicYearAccess } from "../utils/academicYearScope";
 import {
   AdminDashboard, StudentsPage, ParentsPage, TeachersPage, ClassesPage,
   AdminTimetablePage, AttendanceOverviewPage, StaffAttendancePage, LeaveApprovalsPage, HomeworkAdminPage,
@@ -163,6 +165,10 @@ function AppShell() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canPickYear]);
   const [yearPanel, setYearPanel] = useState(null); // null | "review" | "create"
+  // Teachers and parents are held back once the current academic year has ended and closed (and until the
+  // next one is made current): teachers see "Academic year ended", parents see their children read-only.
+  const todayKey = todayKeyStr();
+  const yearAccess = useMemo(() => academicYearAccess(role, data.db.academicYears, todayKey), [role, data.db.academicYears, todayKey]);
   const myId = auth.currentUser.id;
   const unreadNotifs = data.db.notifications.filter((n) => n.userId === myId && !n.read).length;
   const unreadAnnouncements = new Set(
@@ -247,8 +253,8 @@ function AppShell() {
   return (
     <>
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* School brand accent — the signage red, with a hairline of the crest gold. */}
-      <div className="h-1 bg-brand-600 shrink-0 border-b border-gold-400" />
+      {/* School brand accent — the crest's blue, red and gold. */}
+      <div className="h-1 shrink-0 flex"><span className="flex-[6] bg-brand-600" /><span className="flex-[2] bg-emblemred" /><span className="flex-[1] bg-gold-400" /></div>
       {auth.viewingAsUser && (
         <div className="bg-red-600 text-white text-xs sm:text-sm px-4 py-2 flex items-center justify-center gap-2 sticky top-0 z-50 shrink-0">
           <ArrowLeftRight size={14} />
@@ -302,12 +308,15 @@ function AppShell() {
         <main className="flex-1 p-4 sm:p-6 max-w-[1400px] w-full mx-auto">
           <PushOptInBanner />
           <AcademicYearViewBanner />
+          {yearAccess.state === "read_only" && <AcademicYearEndedParentBanner year={yearAccess.year} />}
           {page === "dashboard" && (
             <AcademicYearAttentionBanner onReview={() => setYearPanel("review")} onCreateNext={() => setYearPanel("create")} />
           )}
           {/* Keyed by the workspace year: switching the academic year remounts the page, so no screen keeps a
               stale year (or an open profile / editor) from before the switch. */}
-          <PageRouter key={(data.db.workspaceYear || {}).id || "no-year"} role={role} page={page} setPage={setPage} />
+          {yearAccess.state === "blocked" && page !== "settings"
+            ? <AcademicYearEndedScreen year={yearAccess.year} />
+            : <PageRouter key={(data.db.workspaceYear || {}).id || "no-year"} role={role} page={page} setPage={setPage} />}
           <AcademicYearSettings open={!!yearPanel} startWizard={yearPanel === "create"} onClose={() => setYearPanel(null)} />
         </main>
       </div>
@@ -332,8 +341,8 @@ function SidebarContent({ nav, page, setPage, unreadByPage, needsPasswordChange,
       <div className="h-16 flex items-center gap-2.5 px-5 border-b border-slate-100 shrink-0">
         <Logo size={34} />
         <div className="leading-tight">
-          <p className="text-[13px] font-semibold text-slate-800 tracking-tight">Hiil Model School</p>
-          <p className="text-[10px] text-slate-400 -mt-0.5">School Portal</p>
+          <p className="text-[13px] font-semibold text-slate-800 tracking-tight">{SCHOOL_NAME}</p>
+          <p className="text-[10px] text-slate-400 -mt-0.5">{SCHOOL_PORTAL_LABEL}</p>
         </div>
       </div>
       <nav className="flex-1 overflow-y-auto py-3 px-3">
@@ -344,7 +353,7 @@ function SidebarContent({ nav, page, setPage, unreadByPage, needsPasswordChange,
           const showPwDot = item.key === "settings" && needsPasswordChange;
           return (
             <button key={item.key} onClick={() => { setPage(item.key); onNavigate && onNavigate(); }}
-              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium mb-0.5 transition-colors ${active ? "bg-brand-50 text-brand-700" : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"}`}>
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium mb-0.5 transition-colors ${active ? "bg-brand-50 text-brand-700 border-l-[3px] border-emblemred" : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"}`}>
               <Icon size={16} className={active ? "text-brand-600" : "text-slate-400"} />
               <span className="flex-1 text-left">{item.label}</span>
               {badge > 0 && (
@@ -359,8 +368,7 @@ function SidebarContent({ nav, page, setPage, unreadByPage, needsPasswordChange,
       </nav>
       <div className="p-3 border-t border-slate-100">
         <div className="rounded-lg bg-gold-50 border border-gold-200 px-3 py-2.5">
-          <p className="text-[11px] font-semibold text-brand-700">Center of Excellence</p>
-          <p className="text-[10px] text-gold-700">Quality Education and Personal Excellence</p>
+          <p className="text-[11px] font-semibold text-brand-700">{SCHOOL_MOTTO}</p>
         </div>
       </div>
     </>
