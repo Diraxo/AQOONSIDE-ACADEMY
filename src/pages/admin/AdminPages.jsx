@@ -25,7 +25,7 @@ import {
   leaveDurationLabel, amountInWords, monthLabel,
 } from "../../utils/helpers";
 import {
-  inputCls, Logo, Badge, statusTone, resultTotals, Avatar, Modal, ConfirmDialog, EmptyState,
+  inputCls, Logo, Badge, statusTone, resultTotals, Avatar, Modal, ConfirmDialog, DeleteBlockedDialog, EmptyState,
   CopyIdChip, Field, Card, StatCard, SimpleBar, AutoGrowTextarea, todayKeyStr, shiftDateKey, dateKeyLabel, DateNav, EcMonthNav, AttendanceCalendarNotice, DayStatusBanner, NoSchoolTodayBanner,
   Toolbar, SearchInput, Select, PrimaryButton, GhostButton, AttendanceStatusPicker,
   AttendanceStudentRow, AttendanceMarkAllBar, AttendanceSaveBar,
@@ -38,6 +38,7 @@ import { CashReceiptModal } from "../../components/Receipt";
 import { useData } from "../../context/DataContext";
 import { useToast } from "../../context/ToastContext";
 import { useAuth } from "../../context/AuthContext";
+import { L } from "../../i18n/core";
 import { canEditResultComponent, canPublishResult, canLockResult, canUnlockResult, canViewResultAudit, isAssignedSubjectTeacher } from "../../utils/permissions";
 import { usePresenceMap, isOnline, useConversationTyping } from "../../utils/presence";
 import { useActiveChild, ChildSwitcher } from "../parent/ParentPages";
@@ -833,6 +834,7 @@ function StudentProfilePage({ studentId, onBack, focus, onMessage }) {
   const [promoteOpen, setPromoteOpen] = useState(false);
   const [uploadDocOpen, setUploadDocOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteBlocked, setDeleteBlocked] = useState(null); // guidance when a permanent delete is refused
   const [voidTarget, setVoidTarget] = useState(null);
   const [docViewer, setDocViewer] = useState(null);
   const [recordPaymentOpen, setRecordPaymentOpen] = useState(false);
@@ -899,6 +901,7 @@ function StudentProfilePage({ studentId, onBack, focus, onMessage }) {
     const res = await data.deleteStudent(s.id);
     setDeleteConfirmOpen(false);
     if (res.ok) { toast("Student deleted.", "success"); onBack(); }
+    else if (res.guidance) setDeleteBlocked(res.guidance);
     else toast(res.message, "error");
   }
 
@@ -1319,8 +1322,16 @@ function StudentProfilePage({ studentId, onBack, focus, onMessage }) {
       <ConfirmDialog
         open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)} danger confirmLabel="Delete Permanently"
         title="Delete Student Permanently?"
-        description="This will permanently delete this student's information and associated records — enrollment history, attendance, homework, behavior, results, documents, and payments. This action cannot be undone."
+        description="This will permanently delete this student's information and associated records — enrollment history, attendance, behavior, results and documents. A student who has any payment record cannot be deleted (use Withdrawn or Archived instead). This action cannot be undone."
         onConfirm={confirmDelete}
+      />
+      <DeleteBlockedDialog
+        guidance={deleteBlocked}
+        onClose={() => setDeleteBlocked(null)}
+        actions={deleteBlocked && deleteBlocked.studentStatus ? [
+          { en: "Mark as Withdrawn", so: "U calaamadi Iska bixiyay", onClick: async () => { const r = await data.archiveStudent(s.id, "WITHDRAWN"); setDeleteBlocked(null); toast(r.ok ? L("Status changed to Withdrawn.", "Xaaladda waxaa loo beddelay Iska bixiyay.") : r.message, r.ok ? "success" : "error"); } },
+          { en: "Archive student", so: "Kaydi ardayga", onClick: async () => { const r = await data.archiveStudent(s.id, "ARCHIVED"); setDeleteBlocked(null); toast(r.ok ? L("Student archived.", "Ardayga waa la kaydiyay.") : r.message, r.ok ? "success" : "error"); } },
+        ] : []}
       />
       {canPayments && (
         <CashReceiptModal
@@ -1742,6 +1753,7 @@ function TeachersPage({ onMessage }) {
   const [addOpen, setAddOpen] = useState(false);
   const [editTeacher, setEditTeacher] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteBlocked, setDeleteBlocked] = useState(null); // guidance when a permanent delete is refused
   const [endEmploymentTarget, setEndEmploymentTarget] = useState(null); // staff record
   const teachers = db.users.filter((u) => u.role === ROLES.TEACHER);
   const filtered = teachers.filter((t) => t.name.toLowerCase().includes(q.toLowerCase()));
@@ -1749,9 +1761,11 @@ function TeachersPage({ onMessage }) {
 
   async function confirmDelete() {
     if (!deleteTarget) return;
-    const res = await data.deleteTeacher(deleteTarget.id);
-    toast(res.ok ? `${deleteTarget.name} was deleted.` : res.message, res.ok ? "success" : "error");
+    const target = deleteTarget;
+    const res = await data.deleteTeacher(target.id);
     setDeleteTarget(null);
+    if (!res.ok && res.guidance) { setDeleteBlocked(res.guidance); return; }
+    toast(res.ok ? `${target.name} was deleted.` : res.message, res.ok ? "success" : "error");
   }
 
   return (
@@ -1824,9 +1838,10 @@ function TeachersPage({ onMessage }) {
       <TeacherFormModal open={!!editTeacher} onClose={() => setEditTeacher(null)} teacher={editTeacher} />
       <ConfirmDialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} danger confirmLabel="Delete Teacher Permanently"
         title="Delete this teacher permanently?"
-        description={deleteTarget ? `This permanently removes ${deleteTarget.name}'s login, staff/payroll record, and class/subject assignments. Homework, results, and behavior records they already entered stay on students' history. This can't be undone.` : ""}
+        description={deleteTarget ? `This permanently removes ${deleteTarget.name}'s login, staff/payroll record, and class/subject assignments. Homework, results, and behavior records they already entered stay on students' history. A teacher who is still assigned to classes must have those assignments removed first (or use End Employment instead). This can't be undone.` : ""}
         onConfirm={confirmDelete} />
       <EndEmploymentModal staff={endEmploymentTarget} onClose={() => setEndEmploymentTarget(null)} />
+      <DeleteBlockedDialog guidance={deleteBlocked} onClose={() => setDeleteBlocked(null)} />
     </div>
   );
 }

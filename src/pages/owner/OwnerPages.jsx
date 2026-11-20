@@ -15,7 +15,7 @@ import {
   ethiopianMonthLabelWithGc as ecMonthLabel, formatEthiopianDateWithGc as ecDate,
 } from "../../utils/ethiopianCalendar";
 import {
-  inputCls, Badge, Avatar, Modal, ConfirmDialog, EmptyState, Field, Card, StatCard,
+  inputCls, Badge, Avatar, Modal, ConfirmDialog, DeleteBlockedDialog, EmptyState, Field, Card, StatCard,
   Toolbar, SearchInput, PrimaryButton, GhostButton, PaymentStatusBadge, MonthCalendarGrid, statusTone, todayKeyStr, NoSchoolTodayBanner,
   EthiopianDateField,
 } from "../../components/ui";
@@ -677,6 +677,7 @@ function StaffProfilePage({ staffId, onBack }) {
   const [payOpen, setPayOpen] = useState(null); // month key
   const [advanceOpen, setAdvanceOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteBlocked, setDeleteBlocked] = useState(null); // guidance when a permanent delete is refused
   const [financeEditOpen, setFinanceEditOpen] = useState(false);
   const [endEmploymentOpen, setEndEmploymentOpen] = useState(false);
   const { isBusy, run } = useMutationGuard();
@@ -745,9 +746,11 @@ function StaffProfilePage({ staffId, onBack }) {
           const res = await data.deleteStaff(staff.id);
           setDeleteConfirmOpen(false);
           if (res.ok) { toast(`${staff.name} was deleted.`, "success"); onBack(); }
+          else if (res.guidance) setDeleteBlocked(res.guidance);
           else toast(res.message, "error");
         }}
       />
+      <DeleteBlockedDialog guidance={deleteBlocked} onClose={() => setDeleteBlocked(null)} />
       <EndEmploymentModal staff={endEmploymentOpen ? staff : null} onClose={() => setEndEmploymentOpen(false)} />
 
       <div className="mb-5"><EmployeeAttendanceCard staff={staff} /></div>

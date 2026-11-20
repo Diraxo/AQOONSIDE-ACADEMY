@@ -62,7 +62,7 @@ function AcademicYearSelector() {
         aria-label="Academic Year"
         value={selected.id}
         onChange={(e) => ay.setSelectedAcademicYear(e.target.value === current.id ? null : e.target.value)}
-        className={`text-xs rounded-lg border px-2 py-1.5 max-w-[210px] sm:max-w-[290px] truncate bg-white ${ay.isCurrentYear ? "border-slate-200 text-slate-600" : "border-amber-300 text-amber-800 bg-amber-50 font-medium"}`}
+        className={`text-xs rounded-lg border px-2 py-1.5 min-w-0 max-w-[92px] min-[420px]:max-w-[170px] sm:max-w-[290px] truncate bg-white ${ay.isCurrentYear ? "border-slate-200 text-slate-600" : "border-amber-300 text-amber-800 bg-amber-50 font-medium"}`}
       >
         {academicYears.map((y) => <option key={y.id} value={y.id}>{optionText(y)}</option>)}
       </select>

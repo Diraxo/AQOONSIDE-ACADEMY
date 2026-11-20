@@ -62,7 +62,7 @@ function CashReceiptVoucher({
   const isKnownMethod = VOUCHER_METHODS.slice(0, -1).some((m) => m.key === method);
 
   return (
-    <div className="receipt-voucher relative bg-[#fdf9f0] text-slate-900 font-serif border border-slate-900 p-5 text-[13px] leading-tight max-w-[720px] mx-auto">
+    <div translate="no" className="receipt-voucher relative bg-[#fdf9f0] text-slate-900 font-serif border border-slate-900 p-5 text-[13px] leading-tight max-w-[720px] mx-auto">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <Logo size={64} />

@@ -26,6 +26,7 @@ import {
 import { displayActorLabel } from "../utils/resultAudit";
 import { useToast } from "../context/ToastContext";
 import { useMutationGuard } from "../hooks/useMutationGuard";
+import { useLang } from "../i18n/LanguageContext";
 
 
 import { SCHOOL_NAME } from "../config/branding";
@@ -340,6 +341,53 @@ function ConfirmDialog({ open, onClose, onConfirm, title, description, confirmLa
       <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
         <button type="button" disabled={busy} onClick={onClose} className="px-4 py-2.5 sm:py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed">{cancelLabel}</button>
         <button type="button" disabled={busy} onClick={handleConfirm} className={`px-4 py-2.5 sm:py-2 rounded-lg text-sm font-medium text-white disabled:opacity-60 disabled:cursor-not-allowed ${danger ? "bg-red-600 hover:bg-red-700" : "bg-brand-600 hover:bg-brand-700"}`}>{busy ? "Working…" : confirmLabel}</button>
+      </div>
+    </Modal>
+  );
+}
+
+// Explains WHY a permanent delete was refused and EXACTLY what to do instead (see
+// utils/deleteGuidance.js). Both languages come with the guidance object, so it follows the active
+// language live. `actions` are optional one-tap shortcuts for the recommended alternative.
+function DeleteBlockedDialog({ guidance, onClose, actions = [] }) {
+  const { lang } = useLang();
+  const { busy, run } = useMutationGuard();
+  if (!guidance) return null;
+  const c = (lang === "so" ? guidance.so : guidance.en) || guidance.en;
+  return (
+    <Modal open onClose={onClose} title={c.title} maxWidthClass="sm:max-w-lg">
+      <div translate="no" data-no-translate="">
+        <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 mb-4">
+          <ShieldAlert size={18} className="text-amber-600 shrink-0 mt-0.5" />
+          <p className="text-sm text-amber-900 break-words">{c.intro}</p>
+        </div>
+        {c.steps && c.steps.length > 0 && (
+          <div className="mb-4">
+            <p className="text-sm font-semibold text-slate-800 mb-2">{c.stepsTitle}</p>
+            <ol className="space-y-2">
+              {c.steps.map((st, i) => (
+                <li key={i} className="flex items-start gap-2.5 text-sm text-slate-700">
+                  <span className="shrink-0 w-6 h-6 rounded-full bg-brand-600 text-white text-xs font-semibold flex items-center justify-center mt-0.5">{i + 1}</span>
+                  <span className="min-w-0 break-words">{st}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
+        {c.alt && (
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 mb-4">
+            <p className="text-sm font-semibold text-slate-800 mb-1">{c.altTitle}</p>
+            <p className="text-sm text-slate-600 break-words">{c.alt}</p>
+          </div>
+        )}
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+          <button type="button" onClick={onClose} className="px-4 py-2.5 sm:py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100">{lang === "so" ? "Waan fahmay" : "Got it"}</button>
+          {actions.map((a, i) => (
+            <button key={i} type="button" disabled={busy} onClick={() => run(async () => { await a.onClick(); })} className="px-4 py-2.5 sm:py-2 rounded-lg text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 disabled:opacity-60">
+              {lang === "so" ? a.so : a.en}
+            </button>
+          ))}
+        </div>
       </div>
     </Modal>
   );
@@ -866,7 +914,7 @@ function EthiopianDateField({ value, onChange }) {
 }
 
 export {
-  inputCls, Logo, Badge, statusTone, resultTotals, Avatar, Modal, ConfirmDialog, EmptyState,
+  inputCls, Logo, Badge, statusTone, resultTotals, Avatar, Modal, ConfirmDialog, DeleteBlockedDialog, EmptyState,
   CopyIdChip, Field, Card, StatCard, SimpleBar, AutoGrowTextarea, todayKeyStr, shiftDateKey, dateKeyLabel, DateNav, EcMonthNav, AttendanceCalendarNotice, DayStatusBanner, NoSchoolTodayBanner,
   Toolbar, SearchInput, Select, PrimaryButton, GhostButton, AttendanceStatusPicker,
   AttendanceStudentRow, AttendanceMarkAllBar, AttendanceSaveBar,

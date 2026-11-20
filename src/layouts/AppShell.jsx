@@ -1,4 +1,5 @@
 import { SCHOOL_NAME, SCHOOL_MOTTO, SCHOOL_PORTAL_LABEL } from "../config/branding";
+import { LanguageSwitcher } from "../i18n/LanguageContext";
 import React, { useState, useEffect, useMemo, useCallback, createContext, useContext, useRef } from "react";
 import {
   LayoutDashboard, Users, GraduationCap, UserCog, School, CalendarDays,
@@ -282,20 +283,21 @@ function AppShell() {
         <header className="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-4 sm:px-6 sticky top-0 z-40">
           <div className="flex items-center gap-3">
             <button className="lg:hidden text-slate-500" onClick={openSidebar}><Menu size={22} /></button>
-            <div className="lg:hidden"><Logo size={30} /></div>
+            <div className="hidden min-[420px]:block lg:hidden"><Logo size={30} /></div>
             <div className="hidden lg:block">
               <p className="text-sm font-semibold text-slate-800 capitalize">{NAV[role].find((n) => n.key === page)?.label || "Dashboard"}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
             <AcademicYearSelector />
+            <LanguageSwitcher />
             <button onClick={() => setPage("notifications")} className="relative text-slate-500 hover:text-slate-700 p-2 hover:bg-slate-50 rounded-lg">
               <Bell size={19} />
               {unreadNotifs > 0 && <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] flex items-center justify-center font-semibold">{unreadNotifs > 9 ? "9+" : unreadNotifs}</span>}
             </button>
             <div className="w-px h-6 bg-slate-200 hidden sm:block" />
             <div className="flex items-center gap-2">
-              <Avatar name={auth.currentUser.name} photo={auth.currentUser.photo} size={32} />
+              <span className="hidden min-[420px]:inline-flex"><Avatar name={auth.currentUser.name} photo={auth.currentUser.photo} size={32} /></span>
               <div className="hidden sm:block leading-tight">
                 <p className="text-xs font-semibold text-slate-700">{auth.currentUser.name}</p>
                 <p className="text-[10px] text-slate-400">{ROLE_LABEL[role] || role}</p>

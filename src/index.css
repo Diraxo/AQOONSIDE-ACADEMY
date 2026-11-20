@@ -31,3 +31,17 @@ body {
   .receipt-print .receipt-voucher { max-width: none !important; width: 100% !important; break-inside: avoid; page-break-inside: avoid; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .receipt-print .receipt-voucher + .receipt-voucher { break-before: page; }
 }
+
+/* Somali labels are often longer than their English source ("Dejinta Fiisaska" vs "Fee Settings").
+   Let text wrap instead of overflowing on narrow phones, keep touch targets comfortable, and stop
+   long unbroken words from pushing the page sideways. */
+html[lang="so"] body { overflow-wrap: break-word; }
+html[lang="so"] button,
+html[lang="so"] label,
+html[lang="so"] select,
+html[lang="so"] h1, html[lang="so"] h2, html[lang="so"] h3 { overflow-wrap: anywhere; }
+html[lang="so"] button:not([class*="whitespace-nowrap"]) { text-wrap: balance; }
+@media (max-width: 480px) {
+  html[lang="so"] table { font-size: 0.8125rem; }
+  html[lang="so"] [role="dialog"], html[lang="so"] .fixed.inset-0 { overflow-wrap: break-word; }
+}

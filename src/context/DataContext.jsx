@@ -67,6 +67,8 @@ import { effectiveResultLock } from "../utils/permissions";
 import { useToast } from "../context/ToastContext";
 import { notificationPageKey } from "../utils/notifications";
 import { profileSyncStore } from "../utils/profileSync";
+import { L } from "../i18n/core";
+import { studentPaymentsGuidance, teacherAssignedGuidance, stillLinkedGuidance, isStillLinkedError, isPaymentLinkedError } from "../utils/deleteGuidance";
 import {
   LayoutDashboard, Users, GraduationCap, UserCog, School, BookOpen, CalendarDays,
   ClipboardCheck, ClipboardList, FileBarChart, AlertTriangle, MessageSquare, Bell,
@@ -2045,6 +2047,14 @@ function DataProvider({ children }) {
           const s = studentsRaw.find((x) => x.id === id);
           if (!s) return { ok: false, message: "Student not found." };
           const name = studentFullName(s);
+          // A student with ANY payment on file (even a voided one) can never be permanently deleted:
+          // payment_allocations.obligation_id is ON DELETE RESTRICT. Say so up front, with the exact
+          // alternative, instead of failing half-way with a database error.
+          const myObligationIds = new Set(db.studentFeeObligations.filter((o) => o.studentId === id).map((o) => o.id));
+          const paymentCount = new Set(db.paymentAllocations.filter((a) => myObligationIds.has(a.obligationId)).map((a) => a.paymentId)).size;
+          if (paymentCount > 0) {
+            return { ok: false, message: L(`${name} has payment records, so they can't be deleted. Change their status to Withdrawn or Archived instead.`, `${name} wuxuu leeyahay diiwaanno lacag-bixin, sidaa darteed lama tirtiri karo. Halkii, xaaladdiisa u beddel Iska bixiyay ama La kaydiyay.`), guidance: studentPaymentsGuidance({ name, count: paymentCount }) };
+          }
           // result_evidence metadata rows cascade with the student, but the Storage objects don't
           // -- grab their keys first so we can best-effort delete them after.
           const orphanEvidencePaths = resultEvidenceRaw.filter((e) => e.studentId === id).map((e) => e.storagePath);
@@ -2070,6 +2080,12 @@ function DataProvider({ children }) {
           return { ok: true };
         } catch (e) {
           console.error("Failed to delete student", e);
+          const raw = `${e?.message || ""} ${e?.details || ""} ${e?.code || ""}`;
+          if (isStillLinkedError(raw)) {
+            const s = studentsRaw.find((x) => x.id === id);
+            const name = s ? studentFullName(s) : "";
+            return { ok: false, message: L("This student is still linked to records that must be kept, so it can't be deleted.", "Ardaygan weli wuxuu ku xiran yahay diiwaanno la ilaalinayo, sidaa darteed lama tirtiri karo."), guidance: isPaymentLinkedError(raw) ? studentPaymentsGuidance({ name, count: 0 }) : stillLinkedGuidance({ kind: "student", name }) };
+          }
           return { ok: false, message: e.message || "Couldn't delete the student." };
         }
       },
@@ -2092,14 +2108,27 @@ function DataProvider({ children }) {
           const u = db.users.find((x) => x.id === userId);
           if (!u || u.role !== ROLES.TEACHER) return { ok: false, message: "Teacher not found." };
           const staffRec = db.staff.find((s) => s.userId === userId);
+          // A teacher who still teaches (class + subject assignments) or heads a class can't be
+          // deleted: tell them exactly what to clear first, or to use End Employment instead.
+          const pairCount = db.teacherAssignments.filter((ta) => ta.teacherId === userId).length;
+          const headClasses = db.classes.filter((c) => c.headTeacherId === userId).map((c) => `${c.grade}${c.section}`);
+          if (pairCount > 0 || headClasses.length > 0) {
+            return { ok: false, message: L(`${u.name} is still assigned to classes. Remove their class assignments first, or use End Employment.`, `${u.name} weli waxaa loo meeleeyay fasallo. Marka hore ka saar meelaynta fasallada, ama isticmaal Soo afjar Shaqada.`), guidance: teacherAssignedGuidance({ name: u.name, pairs: pairCount, headClasses }) };
+          }
           // timetable_entries.teacher_id is ON DELETE RESTRICT, so the teacher's own periods must
           // be cleared before the profile is removed (substitutions cascade via their own FKs).
-          // Same purge-everything semantics as before.
           await timetableService.deleteEntriesByTeacher(userId);
-          if (staffRec) await staffService.remove(staffRec.id);
-          if (staffRec) await leaveService.deleteForSubject("STAFF", staffRec.id).catch((e) => console.error("Failed to clean up staff leave requests", e));
+          // Remove the login/profile BEFORE the staff row: if the server refuses, nothing else has been
+          // erased yet. staff.user_id is ON DELETE SET NULL, so the staff row is then deleted by id.
           const res = await accountService.remove(userId);
-          if (!res.ok) return { ok: false, message: res.message || "Couldn't delete the teacher's account." };
+          if (!res.ok) {
+            if (isStillLinkedError(res.message)) {
+              return { ok: false, message: L(`${u.name} is still linked to records that must be kept, so they can't be deleted. Use End Employment instead.`, `${u.name} weli wuxuu ku xiran yahay diiwaanno la ilaalinayo, sidaa darteed lama tirtiri karo. Isticmaal Soo afjar Shaqada.`), guidance: stillLinkedGuidance({ kind: "teacher", name: u.name }) };
+            }
+            return { ok: false, message: res.message || "Couldn't delete the teacher's account." };
+          }
+          if (staffRec) await staffService.remove(staffRec.id).catch((e) => console.error("Failed to remove the teacher's staff record", e));
+          if (staffRec) await leaveService.deleteForSubject("STAFF", staffRec.id).catch((e) => console.error("Failed to clean up staff leave requests", e));
           await Promise.all([
             refetchTeacherAccounts(), refetchTeacherAssignments(), refetchStaff(),
             refetchStaffAttendance(), refetchPayrollPayments(), refetchSalaryAdvances(), refetchClasses(),
@@ -2125,7 +2154,7 @@ function DataProvider({ children }) {
           const linkedUser = staffRec.userId ? db.users.find((u) => u.id === staffRec.userId) : null;
           if (linkedUser && linkedUser.role === ROLES.TEACHER) return this.deleteTeacher(linkedUser.id);
           if (linkedUser && (linkedUser.role === ROLES.ADMIN || linkedUser.role === ROLES.FINANCE)) {
-            return { ok: false, message: "Director/Finance accounts can't be deleted from Staff — disable their access from Accounts & Access instead." };
+            return { ok: false, message: L("Director/Finance accounts can't be deleted from Staff — disable their access from Accounts & Access instead.", "Akoonnada Agaasimaha/Maaliyadda looma tirtiri karo bogga Shaqaalaha — halkii, ka xir marinka akoonkooda Akoonnada & Marinka.") };
           }
           await leaveService.deleteForSubject("STAFF", staffId).catch((e) => console.error("Failed to clean up staff leave requests", e));
           await staffService.remove(staffId);

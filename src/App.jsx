@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import { AppShell } from "./layouts/AppShell";
 import { LoginScreen, PasswordRecoveryScreen, InvalidRecoveryLinkScreen } from "./pages/auth/AuthPages";
 import { Logo } from "./components/ui";
+import { LanguageProvider, LanguageSwitcher } from "./i18n/LanguageContext";
 
 
 function SplashScreen() {
@@ -21,14 +22,23 @@ function Root() {
   if (auth.loading) return <SplashScreen />;
   // A password-recovery landing takes precedence over any session that may have loaded, so the
   // user always chooses a new password before reaching the app.
-  if (auth.passwordRecovery) return <PasswordRecoveryScreen />;
-  if (auth.recoveryLinkInvalid) return <InvalidRecoveryLinkScreen />;
-  if (!auth.currentUser) return <LoginScreen />;
+  // Signed-out screens have no header bar, so the language switch floats top-right there; once
+  // signed in it lives in the app header.
+  const withSwitcher = (screen) => (
+    <>
+      <div className="fixed top-3 right-3 z-[60]"><LanguageSwitcher /></div>
+      {screen}
+    </>
+  );
+  if (auth.passwordRecovery) return withSwitcher(<PasswordRecoveryScreen />);
+  if (auth.recoveryLinkInvalid) return withSwitcher(<InvalidRecoveryLinkScreen />);
+  if (!auth.currentUser) return withSwitcher(<LoginScreen />);
   return <AppShell />;
 }
 
 function App() {
   return (
+    <LanguageProvider>
     <ThemeProvider>
     <ToastProvider>
       <DataProvider>
@@ -38,6 +48,7 @@ function App() {
       </DataProvider>
     </ToastProvider>
     </ThemeProvider>
+    </LanguageProvider>
   );
 }
 
