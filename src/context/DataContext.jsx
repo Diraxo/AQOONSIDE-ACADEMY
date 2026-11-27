@@ -2226,6 +2226,13 @@ function DataProvider({ children }) {
               employmentDate: new Date().toISOString().slice(0, 10), salary: salary != null ? salary : 4500,
               bankAccount: bankAccount || null, photo: null,
             });
+            // The account function only stores the combined name; persist the parts so Edit Teacher
+            // can show them. Needs the staff row first (profiles UPDATE RLS for directors checks it).
+            try {
+              await teacherService.updateProfile(teacherId, { firstName, middleName, lastName });
+            } catch (nameErr) {
+              console.error("Teacher created, but the name parts failed to save", nameErr);
+            }
             // Photo upload needs the staff row to exist (object RLS checks it) -- do it now, and
             // write the same path to both profiles.photo_url and staff.photo_url.
             if (photo instanceof File) {
@@ -2281,6 +2288,9 @@ function DataProvider({ children }) {
           }
           const profilePatch = {};
           if (userPatch.name !== undefined) profilePatch.name = userPatch.name;
+          if (userPatch.firstName !== undefined) profilePatch.firstName = userPatch.firstName;
+          if (userPatch.middleName !== undefined) profilePatch.middleName = userPatch.middleName;
+          if (userPatch.lastName !== undefined) profilePatch.lastName = userPatch.lastName;
           if (userPatch.phone !== undefined) profilePatch.phone = userPatch.phone;
           if (resolvedPhoto !== undefined) profilePatch.photo = resolvedPhoto;
           if (Object.keys(profilePatch).length) await teacherService.updateProfile(id, profilePatch);

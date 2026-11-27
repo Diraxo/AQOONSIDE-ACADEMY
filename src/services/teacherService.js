@@ -56,6 +56,9 @@ export function createTeacherService() {
     async updateProfile(id, patch) {
       const row = {};
       if (patch.name !== undefined) row.full_name = patch.name;
+      if (patch.firstName !== undefined) row.first_name = patch.firstName || null;
+      if (patch.middleName !== undefined) row.middle_name = patch.middleName || null;
+      if (patch.lastName !== undefined) row.last_name = patch.lastName || null;
       if (patch.phone !== undefined) row.phone = patch.phone || null;
       if (patch.photo !== undefined) row.photo_url = patch.photo || null;
       const { error } = await supabase.from("profiles").update(row).eq("id", id);

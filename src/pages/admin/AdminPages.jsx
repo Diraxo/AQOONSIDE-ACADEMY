@@ -1909,7 +1909,10 @@ function TeacherFormModal({ open, onClose, teacher }) {
       // The teacher's exact class+subject pairs — never rebuilt from separate class and subject lists.
       const assignments = pairsForTeacher(data.db.teacherAssignments, teacher.id);
       const staffRec = data.db.staff.find((s) => s.userId === teacher.id);
-      setForm({ firstName: teacher.firstName || "", middleName: teacher.middleName || "", lastName: teacher.lastName || "", email: teacher.email, phone: teacher.phone || "", assignments, password: "", photo: teacher.photo || null, photoPreview: null, bankAccount: staffRec?.bankAccount || "" });
+      // Older accounts only have the combined name stored -- split it so the fields aren't blank.
+      const hasParts = teacher.firstName || teacher.middleName || teacher.lastName;
+      const parts = hasParts ? teacher : splitFullName(teacher.name);
+      setForm({ firstName: parts.firstName || "", middleName: parts.middleName || "", lastName: parts.lastName || "", email: teacher.email, phone: teacher.phone || "", assignments, password: "", photo: teacher.photo || null, photoPreview: null, bankAccount: staffRec?.bankAccount || "" });
     } else {
       setForm({ ...empty, password: generatePassword() });
     }
