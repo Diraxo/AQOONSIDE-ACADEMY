@@ -1322,7 +1322,7 @@ function StudentProfilePage({ studentId, onBack, focus, onMessage }) {
       <ConfirmDialog
         open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)} danger confirmLabel="Delete Permanently"
         title="Delete Student Permanently?"
-        description="This will permanently delete this student's information and associated records — enrollment history, attendance, behavior, results and documents. A student who has any payment record cannot be deleted (use Withdrawn or Archived instead). This action cannot be undone."
+        description="This will permanently delete this student's information and associated records — enrollment history, attendance, behavior, results and documents. Payments that were voided are removed with the student; a student with a payment that is still active must have it voided first. This action cannot be undone."
         onConfirm={confirmDelete}
       />
       <DeleteBlockedDialog
@@ -1838,7 +1838,7 @@ function TeachersPage({ onMessage }) {
       <TeacherFormModal open={!!editTeacher} onClose={() => setEditTeacher(null)} teacher={editTeacher} />
       <ConfirmDialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} danger confirmLabel="Delete Teacher Permanently"
         title="Delete this teacher permanently?"
-        description={deleteTarget ? `This permanently removes ${deleteTarget.name}'s login, staff/payroll record, and class/subject assignments. Homework, results, and behavior records they already entered stay on students' history. A teacher who is still assigned to classes must have those assignments removed first (or use End Employment instead). This can't be undone.` : ""}
+        description={deleteTarget ? `This permanently removes ${deleteTarget.name}'s login, staff/payroll record, and class/subject assignments. Homework, results, and behavior records they already entered stay on students' history. Any class and subject assignments they hold are removed too. This can't be undone.` : ""}
         onConfirm={confirmDelete} />
       <EndEmploymentModal staff={endEmploymentTarget} onClose={() => setEndEmploymentTarget(null)} />
       <DeleteBlockedDialog guidance={deleteBlocked} onClose={() => setDeleteBlocked(null)} />

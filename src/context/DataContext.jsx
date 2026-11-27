@@ -2051,7 +2051,9 @@ function DataProvider({ children }) {
           // payment_allocations.obligation_id is ON DELETE RESTRICT. Say so up front, with the exact
           // alternative, instead of failing half-way with a database error.
           const myObligationIds = new Set(db.studentFeeObligations.filter((o) => o.studentId === id).map((o) => o.id));
-          const paymentCount = new Set(db.paymentAllocations.filter((a) => myObligationIds.has(a.obligationId)).map((a) => a.paymentId)).size;
+          const myPaymentIds = new Set(db.paymentAllocations.filter((a) => myObligationIds.has(a.obligationId)).map((a) => a.paymentId));
+          // Voided (withdrawn) payments no longer block the delete -- they are purged below.
+          const paymentCount = db.payments.filter((p) => myPaymentIds.has(p.id) && p.status !== "VOIDED").length;
           if (paymentCount > 0) {
             return { ok: false, message: L(`${name} has payment records, so they can't be deleted. Change their status to Withdrawn or Archived instead.`, `${name} wuxuu leeyahay diiwaanno lacag-bixin, sidaa darteed lama tirtiri karo. Halkii, xaaladdiisa u beddel Iska bixiyay ama La kaydiyay.`), guidance: studentPaymentsGuidance({ name, count: paymentCount }) };
           }
@@ -2064,6 +2066,7 @@ function DataProvider({ children }) {
             .filter((d) => d.studentId === id)
             .map((d) => d.storagePath || d.fileDataUrl)
             .filter(isStoragePath);
+          if (myPaymentIds.size > 0) await paymentService.purgeVoidedForStudent(id);
           await studentService.remove(id);
           // attendance.student_id is ON DELETE CASCADE (server-side); leave_requests.subject_id is
           // polymorphic with no FK, so student leave rows are deleted explicitly (RLS delete policy
@@ -2108,13 +2111,8 @@ function DataProvider({ children }) {
           const u = db.users.find((x) => x.id === userId);
           if (!u || u.role !== ROLES.TEACHER) return { ok: false, message: "Teacher not found." };
           const staffRec = db.staff.find((s) => s.userId === userId);
-          // A teacher who still teaches (class + subject assignments) or heads a class can't be
-          // deleted: tell them exactly what to clear first, or to use End Employment instead.
-          const pairCount = db.teacherAssignments.filter((ta) => ta.teacherId === userId).length;
-          const headClasses = db.classes.filter((c) => c.headTeacherId === userId).map((c) => `${c.grade}${c.section}`);
-          if (pairCount > 0 || headClasses.length > 0) {
-            return { ok: false, message: L(`${u.name} is still assigned to classes. Remove their class assignments first, or use End Employment.`, `${u.name} weli waxaa loo meeleeyay fasallo. Marka hore ka saar meelaynta fasallada, ama isticmaal Soo afjar Shaqada.`), guidance: teacherAssignedGuidance({ name: u.name, pairs: pairCount, headClasses }) };
-          }
+          // Class/subject assignments and head-teacher links are cleared server-side when the profile is
+          // deleted (FK cascade / set null), so an assigned teacher can be deleted directly.
           // timetable_entries.teacher_id is ON DELETE RESTRICT, so the teacher's own periods must
           // be cleared before the profile is removed (substitutions cascade via their own FKs).
           await timetableService.deleteEntriesByTeacher(userId);

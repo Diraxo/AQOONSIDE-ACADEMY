@@ -138,6 +138,13 @@ export function createPaymentService() {
       return mapPayment(Array.isArray(data) ? data[0] : data);
     },
 
+    // Removes this student's allocations on VOIDED receipts so the student can be deleted. The
+    // database refuses if any live (non-voided) payment still funds them.
+    async purgeVoidedForStudent(studentId) {
+      const { error } = await supabase.rpc("purge_voided_payments_for_student", { p_student_id: studentId });
+      if (error) throw error;
+    },
+
     /* ---------- payment_methods ---------- */
     async addMethod(name) {
       const trimmed = (name || "").trim();
